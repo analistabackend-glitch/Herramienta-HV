@@ -1,0 +1,126 @@
+{
+    "contacto": {
+        "email": "deimeryamith26@gmail.com",
+        "telefono": "3041309253"
+    },
+    "perfil_resumen": "DEIMER MENDIVIL\nCONTADOR PUBLICO\nC.C 1.010.020.908 T.P 330861-T\nContador público con capacidad de trabajo en equipo, mostrando\nresponsabilidad, disciplina y cumplimiento en las tareas asignadas.\nOrdenado, con facilidad de aprendizaje. Demostrando fortalezas en\nel área contable, conciliaciones bancarias, registros contables,\nrevisión de estados financieros, softwares contables impuestos,",
+    "experiencia": [
+        {
+            "empresa": "Diseñar, ejecutar y cumplir con el cronograma de actividades de",
+            "cargo": "Analista Junior",
+            "fecha_inicio": "2023",
+            "fecha_fin": "2025",
+            "duracion_meses": null,
+            "responsabilidades": []
+        },
+        {
+            "empresa": "Dar respuestas oportunas y de calidad al cliente interno y externo,",
+            "cargo": "auditoria",
+            "fecha_inicio": null,
+            "fecha_fin": null,
+            "duracion_meses": null,
+            "responsabilidades": [
+                "brindándole soluciones acordes a sus necesidades",
+                "Aplicaciones de cartera",
+                "Realizar arqueos de caja menores y mayores",
+                "Realizar inventarios de mercancía",
+                "Análisis y control de partidas de las conciliaciones bancarias.",
+                "Redactar Informes y emitir a gerencia."
+            ]
+        },
+        {
+            "empresa": "INVERSIONES ROGAL SAS",
+            "cargo": "Auxiliar Contable",
+            "fecha_inicio": "2022",
+            "fecha_fin": "2023",
+            "duracion_meses": null,
+            "responsabilidades": [
+                "Realizar registros contables.",
+                "Validar cuentas por cobrar y por pagar.",
+                "Realizar conciliaciones bancarias.",
+                "Realizar certificados de impuestos."
+            ]
+        }
+    ],
+    "educacion": [
+        {
+            "titulo": null,
+            "institucion": null,
+            "año": "2005"
+        },
+        {
+            "titulo": "Contador Público",
+            "institucion": "UNIVERSIDAD DE SUCRE",
+            "año": "2016"
+        }
+    ],
+    "habilidades": [
+        "Revisión y evaluación de los registros de la empresa",
+        "Mejora de",
+        "Procesos y acciones correctivas. entre otros temas afines.",
+        "Manejo de software contables",
+        "Mejora de procesos",
+        "Disciplinado",
+        "Facilidad de aprendizaje",
+        "Cumplimiento en",
+        "Procedimientos",
+        "Martinez",
+        "20 días del mes de agosto de 2025.",
+        "La administracion certifica",
+        "Que la persona que se enuncia a continuación laboró para",
+        "Compañía",
+        "Casatoro s.a. bic",
+        "Nit compañía 830.004.993",
+        "Nombre deimer yamidt mendivil",
+        "Documento cc",
+        "010",
+        "020",
+        "908",
+        "Fecha de ingreso 27 de febrero 2023",
+        "Fecha de retiro 29 de julio 2025",
+        "Termino indefinido",
+        "Tipo de contrato",
+        "Cargo analista junior usc",
+        "Se expide a quien interese en la ciudad de bogotá d. c.",
+        "A los veinte",
+        "Para constancia firma",
+        "Edith mireya sánchez morales",
+        "Jefe de compensación",
+        "Beneficios y nómina",
+        "Teléfono contacto 746 0010 ext 723",
+        "722",
+        "717",
+        "Celular 315",
+        "3250746",
+        "Que",
+        "Con cedula de ciudadanía n 1.010.020.908",
+        "Del año 2022 hasta el día 17 de febrero del 2023",
+        "Laboral de 48 horas mensuales.",
+        "D.c a los 20 días del mes de febrero del año 2023",
+        "Certifica",
+        "El señor deimer yamidt mendívil martínez identificado",
+        "Laboró en nuestra empresa desde el día 13 de octubre",
+        "En el cargo de con una jornada",
+        "Auxiliar contable",
+        "Para mayor constancia se expide en la ciudad de bogotá",
+        "Atentamente",
+        "Isabel torres",
+        "Cc 52.962.095",
+        "Talento humano"
+    ],
+    "skills_detectadas": {
+        "tecnicas": [
+            "NIA",
+            "AUDITORIA",
+            "NOMINA",
+            "CARTERA"
+        ],
+        "blandas": [
+            "Trabajo en equipo"
+        ]
+    },
+    "cursos": [],
+    "referencias": "INVERSIONES ROGAL SAS\nCASATORO S.A BIC\nEdith Sánchez\nIsabel Torres.\nTel\n746 0010 Tel 3041309253\nCONTACTO\n3138931231\ndeimeryamith26@gmail.com\nCR 50C 41A-17 SUR",
+    "años_experiencia_total": 0.0,
+    "cantidad_empleos": 3
+}

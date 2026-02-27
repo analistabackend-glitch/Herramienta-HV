@@ -1,0 +1,89 @@
+{
+    "contacto": {
+        "email": "Lokanita18@gmail.com",
+        "telefono": "3022941682"
+    },
+    "perfil_resumen": "Lokanita18@gmail.com\nCel 3022941682\nDiagonal 84a 82a - 75\nEjército Nacional - Analista de\nProyectos y Costos\nEnero 2007 - Octubre 2015\nDiseñé y levanté el sistema de costos.\nProfesional en Contaduría Pública con sólida",
+    "experiencia": [
+        {
+            "empresa": "Honor y laurel",
+            "cargo": "Analista de Procesos",
+            "fecha_inicio": "2023-02",
+            "fecha_fin": "presente",
+            "duracion_meses": null,
+            "responsabilidades": [
+                "Implementar y mantener los procesos de normas ISO",
+                "9001, BASC y ISO 31000.",
+                "Optimizar la elaboración de los análisis de riesgos y",
+                "apoyo en control interno.",
+                "Analizar y cuidar el presupuesto del área.",
+                "Implementar y acondicionar la herramienta para",
+                "análisis de riesgos de los clientes.",
+                "Diseñar indicadores para informes de gestión a nivel",
+                "nacional.",
+                "Ingeniería de Refrigeración Industrial R."
+            ]
+        },
+        {
+            "empresa": "Hnos.",
+            "cargo": "Control Interno.",
+            "fecha_inicio": "2016-02",
+            "fecha_fin": "2022-09",
+            "duracion_meses": 79,
+            "responsabilidades": [
+                "Mantuve el Análisis de costos y vigilancia de",
+                "cuentas clave.",
+                "Implementé y analicé las estrategias de mejora",
+                "continua para las unidades de negocio.",
+                "Implementé estrategias de control interno en las",
+                "plantas de producción.",
+                "Diseñé e implementé el sistema de costos, por",
+                "medio de una reingeniería en el sistema Siesa 8.5",
+                "módulo de manufactura y contabilidad de costos.",
+                "Diseñé estrategias de control de inventarios y",
+                "análisis de indicadores."
+            ]
+        }
+    ],
+    "educacion": [
+        {
+            "institucion": "Universidad Antonio Nariño, 2014"
+        }
+    ],
+    "habilidades": [
+        "Universidad de los andes",
+        "2025.",
+        "Análisis y pensamiento crítico",
+        "Dominio de herramientas financieras y",
+        "Tecnológicas.",
+        "Comunicación efectiva y presentación de",
+        "Informes.",
+        "Lorena tirado llanos",
+        "Contadora pública y analista"
+    ],
+    "skills_detectadas": {
+        "tecnicas": [
+            "EXCEL",
+            "SAP",
+            "POWER BI",
+            "ISO 9001",
+            "CONTABILIDAD",
+            "PRESUPUESTO",
+            "COSTOS",
+            "GESTION DE RIESGOS"
+        ],
+        "blandas": [
+            "Comunicacion"
+        ]
+    },
+    "cursos": [
+        "Curso viabilidad financiera para la",
+        "Internacionalización",
+        "Cámara de",
+        "Comercio de bogotá",
+        "2019."
+    ],
+    "referencias": "",
+    "años_experiencia_total": 6.6,
+    "cantidad_empleos": 2
+}

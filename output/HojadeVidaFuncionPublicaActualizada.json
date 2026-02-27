@@ -1,0 +1,287 @@
+{
+    "tipo_formato": "funcion_publica",
+    "contacto": {
+        "email": "jorgemorenoduarte47@gmail.com"
+    },
+    "perfil_resumen": "",
+    "experiencia": [
+        {
+            "empresa": "ALCALDIA DE PAILITAS",
+            "cargo": "JEF DE DE CONTROL INTERNO CONTRL",
+            "fecha_inicio": null,
+            "fecha_fin": null,
+            "duracion_meses": null,
+            "responsabilidades": []
+        },
+        {
+            "empresa": "ALCALDIA DE PAILITAS",
+            "cargo": "JEFE CONTROL INTERNO OFICINA",
+            "fecha_inicio": null,
+            "fecha_fin": null,
+            "duracion_meses": null,
+            "responsabilidades": []
+        },
+        {
+            "empresa": "PERSONERIA DE PELAYA",
+            "cargo": "POFESIONAL CONTROL INTERNO OFICINA",
+            "fecha_inicio": null,
+            "fecha_fin": null,
+            "duracion_meses": null,
+            "responsabilidades": []
+        },
+        {
+            "empresa": "ALCALDIA DE PAILITAS CESAR",
+            "cargo": "CONTRATISTA DESARROLLO",
+            "fecha_inicio": null,
+            "fecha_fin": null,
+            "duracion_meses": null,
+            "responsabilidades": []
+        },
+        {
+            "empresa": "PERSONERIA MUNICIPAL DE PELAYA CESAR",
+            "cargo": "CONTRATISTA PERSONERO",
+            "fecha_inicio": null,
+            "fecha_fin": null,
+            "duracion_meses": null,
+            "responsabilidades": []
+        },
+        {
+            "empresa": "FECHA DE INGRESO FECHA DE RETIRO",
+            "cargo": null,
+            "fecha_inicio": null,
+            "fecha_fin": null,
+            "duracion_meses": null,
+            "responsabilidades": []
+        },
+        {
+            "empresa": "FECHA DE INGRESO FECHA DE RETIRO",
+            "cargo": null,
+            "fecha_inicio": null,
+            "fecha_fin": null,
+            "duracion_meses": null,
+            "responsabilidades": []
+        },
+        {
+            "empresa": "FECHA DE INGRESO FECHA DE RETIRO",
+            "cargo": null,
+            "fecha_inicio": null,
+            "fecha_fin": null,
+            "duracion_meses": null,
+            "responsabilidades": []
+        },
+        {
+            "empresa": "FECHA DE INGRESO FECHA DE RETIRO",
+            "cargo": null,
+            "fecha_inicio": null,
+            "fecha_fin": null,
+            "duracion_meses": null,
+            "responsabilidades": []
+        },
+        {
+            "empresa": "FECHA DE INGRESO FECHA DE RETIRO",
+            "cargo": null,
+            "fecha_inicio": null,
+            "fecha_fin": null,
+            "duracion_meses": null,
+            "responsabilidades": []
+        },
+        {
+            "empresa": "ALCALDIA DE PAILITAS",
+            "cargo": "CONTRATISTA EDUCACION",
+            "fecha_inicio": null,
+            "fecha_fin": null,
+            "duracion_meses": null,
+            "responsabilidades": []
+        },
+        {
+            "empresa": "INTITUTO COLOMBIANO AGROPECUARIO",
+            "cargo": "CONTRATISTA RECURSO",
+            "fecha_inicio": null,
+            "fecha_fin": null,
+            "duracion_meses": null,
+            "responsabilidades": []
+        },
+        {
+            "empresa": "UT UNIDOS POR LA PROSPERIDAD SOCIAL DE COLOMBIA",
+            "cargo": "CONTRATISTA RECURSOS",
+            "fecha_inicio": null,
+            "fecha_fin": null,
+            "duracion_meses": null,
+            "responsabilidades": []
+        },
+        {
+            "empresa": "UT UNIDOS POR LA PROSPERIDAD SOCIAL DE COLOMBIA",
+            "cargo": "CONTRATISTA RECURSOS",
+            "fecha_inicio": null,
+            "fecha_fin": null,
+            "duracion_meses": null,
+            "responsabilidades": []
+        },
+        {
+            "empresa": "UNIVERSIDAD AUTONOMA DEL CARIBE",
+            "cargo": "CONTRATISTA RECURSOS",
+            "fecha_inicio": null,
+            "fecha_fin": null,
+            "duracion_meses": null,
+            "responsabilidades": []
+        },
+        {
+            "empresa": "FECHA DE RETIRO",
+            "cargo": null,
+            "fecha_inicio": null,
+            "fecha_fin": null,
+            "duracion_meses": null,
+            "responsabilidades": []
+        },
+        {
+            "empresa": "FECHA DE RETIRO",
+            "cargo": null,
+            "fecha_inicio": null,
+            "fecha_fin": null,
+            "duracion_meses": null,
+            "responsabilidades": []
+        },
+        {
+            "empresa": "FECHA DE RETIRO",
+            "cargo": null,
+            "fecha_inicio": null,
+            "fecha_fin": null,
+            "duracion_meses": null,
+            "responsabilidades": []
+        },
+        {
+            "empresa": "FECHA DE RETIRO",
+            "cargo": null,
+            "fecha_inicio": null,
+            "fecha_fin": null,
+            "duracion_meses": null,
+            "responsabilidades": []
+        },
+        {
+            "empresa": "FECHA DE RETIRO",
+            "cargo": null,
+            "fecha_inicio": null,
+            "fecha_fin": null,
+            "duracion_meses": null,
+            "responsabilidades": []
+        },
+        {
+            "empresa": "CSOLOMBIA",
+            "cargo": "CONTRATISTA RECURSOS HUMANOS",
+            "fecha_inicio": null,
+            "fecha_fin": null,
+            "duracion_meses": null,
+            "responsabilidades": []
+        },
+        {
+            "empresa": "CSOLOMBIA",
+            "cargo": "CONTRATISTA CONTROL INTERNO",
+            "fecha_inicio": null,
+            "fecha_fin": null,
+            "duracion_meses": null,
+            "responsabilidades": []
+        },
+        {
+            "empresa": "CSOLOMBIA",
+            "cargo": "CONTRATISTA RECURSOS HUMANOS",
+            "fecha_inicio": null,
+            "fecha_fin": null,
+            "duracion_meses": null,
+            "responsabilidades": []
+        },
+        {
+            "empresa": "CSOLOMBIA",
+            "cargo": "CONTRATISTA GESTION HUMANA",
+            "fecha_inicio": null,
+            "fecha_fin": null,
+            "duracion_meses": null,
+            "responsabilidades": []
+        },
+        {
+            "empresa": "CSOLOMBIA",
+            "cargo": "CONTRATISTA NO APLICA",
+            "fecha_inicio": null,
+            "fecha_fin": null,
+            "duracion_meses": null,
+            "responsabilidades": []
+        },
+        {
+            "empresa": "FECHA DE RETIRO",
+            "cargo": null,
+            "fecha_inicio": null,
+            "fecha_fin": null,
+            "duracion_meses": null,
+            "responsabilidades": []
+        },
+        {
+            "empresa": "FECHA DE RETIRO",
+            "cargo": null,
+            "fecha_inicio": null,
+            "fecha_fin": null,
+            "duracion_meses": null,
+            "responsabilidades": []
+        },
+        {
+            "empresa": "CSOLOMBIA",
+            "cargo": "CONTRATISTA SALUD",
+            "fecha_inicio": null,
+            "fecha_fin": null,
+            "duracion_meses": null,
+            "responsabilidades": []
+        },
+        {
+            "empresa": "CSOLOMBIA",
+            "cargo": "LA ADMINISTRACIÓN PÚBLICA",
+            "fecha_inicio": null,
+            "fecha_fin": null,
+            "duracion_meses": null,
+            "responsabilidades": []
+        }
+    ],
+    "educacion": [
+        {
+            "modalidad": "Técnica",
+            "titulo": "(TÉCNICA) TL (TECNOLÓGICA) TE (TECNÓLOGICA ESPECIALIZADA)",
+            "año": null,
+            "institucion": null
+        },
+        {
+            "modalidad": "Especialización",
+            "titulo": "(ESPECIALIZACIÓN) MG (MAESTRÍA O MAGISTER) DOC (DOCTORADO O PHD)",
+            "año": null,
+            "institucion": null
+        },
+        {
+            "modalidad": "Postgrado",
+            "titulo": "MAESTRIA EN ADMINISTRACION",
+            "año": null,
+            "institucion": null
+        },
+        {
+            "modalidad": "Postgrado",
+            "titulo": "ESPECIALIZACION EN FINANZAS",
+            "año": null,
+            "institucion": null
+        },
+        {
+            "modalidad": "Pregrado",
+            "titulo": "ADMINISTRACION PUBLICA",
+            "año": null,
+            "institucion": null
+        }
+    ],
+    "habilidades": [],
+    "skills_detectadas": {
+        "tecnicas": [
+            "SAP",
+            "AUDITORIA"
+        ],
+        "blandas": [
+            "Organizacion"
+        ]
+    },
+    "cursos": [],
+    "referencias": "",
+    "años_experiencia_total": 0.0,
+    "cantidad_empleos": 29
+}

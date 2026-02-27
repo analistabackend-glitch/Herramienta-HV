@@ -1,0 +1,120 @@
+{
+    "contacto": {
+        "email": "alejandarueda998@gmail.com",
+        "telefono": "3208449257"
+    },
+    "perfil_resumen": "ALEJANDRA RUEDA\nAUDITOR INTERNO",
+    "experiencia": [
+        {
+            "empresa": "SULICOR SAS",
+            "cargo": "Coordinador Auditoria interna",
+            "fecha_inicio": "2025-04",
+            "fecha_fin": "2025-12",
+            "duracion_meses": 8,
+            "responsabilidades": [
+                "Planificación del Plan Anual de Auditoría",
+                "Coordinación y Supervisión del Equipo de Auditoría",
+                "Asignación y Control de Auditorías",
+                "Revisión y Aprobación de Papeles de Trabajo",
+                "Evaluación del Control Interno",
+                "Gestión de Riesgos de Auditoría",
+                "Cumplimiento de Normas y Procedimientos",
+                "Elaboración y Consolidación de Informes",
+                "Seguimiento a Planes de Mejora",
+                "Comunicación con la Alta Dirección"
+            ]
+        },
+        {
+            "empresa": "AUTOGERMANA BMW",
+            "cargo": "11. Coordinación con Auditores Externos",
+            "fecha_inicio": null,
+            "fecha_fin": null,
+            "duracion_meses": null,
+            "responsabilidades": []
+        },
+        {
+            "empresa": "Auditor interno Lider",
+            "cargo": "1. Liderazgo y Supervisión del Equipo de Auditoría",
+            "fecha_inicio": "2024-03",
+            "fecha_fin": "2025-03",
+            "duracion_meses": 12,
+            "responsabilidades": [
+                "Planificación y Ejecución de Auditorías Financieras",
+                "Evaluación de los Controles Internos",
+                "Análisis y Revisión de Estados Financieros",
+                "Identificación y Gestión de Riesgos",
+                "Interacción con la Alta Dirección.",
+                "Cumplimiento de Normativas y Estándares."
+            ]
+        }
+    ],
+    "educacion": [
+        {
+            "titulo": "CONTADOR PUBLICO",
+            "institucion": "Corporación Universitaria",
+            "año": "2019"
+        },
+        {
+            "titulo": "DIPLOMADO NIFF",
+            "institucion": "Corporación Universitaria",
+            "año": "2024"
+        }
+    ],
+    "habilidades": [
+        "Normas internacionales de auditoría nia y gestión de riesgos.",
+        "Efectiva y trabajo en equipo",
+        "2. evaluación de controles internos",
+        "3. análisis financiero",
+        "Liderazgo",
+        "4. gestión de relaciones con clientes",
+        "Comunicación efectiva",
+        "5. cumplimiento de normativas",
+        "6. evaluación de riesgos",
+        "Pensamiento analítico",
+        "7. revisión de informes de auditoría",
+        "Ética profesional"
+    ],
+    "skills_detectadas": {
+        "tecnicas": [
+            "NIIF",
+            "NIA",
+            "NIAS",
+            "ISO 14001",
+            "AUDITORIA",
+            "GESTION DE RIESGOS"
+        ],
+        "blandas": [
+            "Liderazgo",
+            "Comunicacion",
+            "Trabajo en equipo",
+            "Analitico",
+            "Etica"
+        ]
+    },
+    "cursos": [
+        "Nias",
+        "Fundamentacion en",
+        "Sistemas de gestion",
+        "Ambiental bajo la",
+        "Norma ntc iso 14001 2004",
+        "Administración de los",
+        "Recursos financieros",
+        "Para el desarrollo de la",
+        "Inteligencia financiera",
+        "Impactos ambientales en",
+        "Actividades",
+        "Productos",
+        "Y servicios",
+        "2022 03",
+        "2024",
+        "Rueda",
+        "314",
+        "461",
+        "Audexcol sas",
+        "Auditor interno senior",
+        "1. planificación y supervisión de auditorías"
+    ],
+    "referencias": "Felipe Beltran\nJulian\nContador Publico Administrador\nTelefono310-863-83-73 Telefono",
+    "años_experiencia_total": 1.7,
+    "cantidad_empleos": 3
+}

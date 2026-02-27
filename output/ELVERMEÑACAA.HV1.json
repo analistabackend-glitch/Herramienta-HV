@@ -1,0 +1,149 @@
+{
+    "contacto": {
+        "email": "elvermenaca@gmail.com",
+        "telefono": "3054870175"
+    },
+    "perfil_resumen": "Bacteriólogo y Especialista en Ingeniería de la Calidad con más de 10 años\ndirección y jefatura de procesos regulados. Experto en el diseño y optimización\ngestión de calidad bajo indicadores KPIs, garantizando el cumplimiento normativo\nINS y Secretarías de Salud. Líder estratégico en la ejecución de auditorías,\napoyo y programas de tecno y reactivovigilancia. Especialista en la articulación\ninterdisciplinarios y la implementación de planes de capacitación con enfoque\ndel paciente y la mejora continua. Profesional orientado al detalle, con capacidad\npara la negociación con proveedores y el cumplimiento de metas institucionales",
+    "experiencia": [
+        {
+            "empresa": "Nombre de la empresa FUNDACION KALAI BANCO DE",
+            "cargo": "DIRECTOR CIENTIFICO",
+            "fecha_inicio": null,
+            "fecha_fin": null,
+            "duracion_meses": null,
+            "responsabilidades": [
+                "Fecha ingreso/retiro Abril de 2023 / Enero de 2026",
+                "Funciones y logros Coordinación y dirección del departamento de calidad",
+                "análisis y optimización de indicadores KPIS, realización de documentación",
+                "de control como INVIMA, secretarias de salud y INS, ejecución de auditorías",
+                "externas, análisis de no conformidades, generación de planes de mejora,"
+            ]
+        },
+        {
+            "empresa": "novedades, manejo de personal, desarrollo de comités interdisciplinarios",
+            "cargo": "procesos, liderar los procesos correcto almacenamiento y uso de reactivos,",
+            "fecha_inicio": null,
+            "fecha_fin": null,
+            "duracion_meses": null,
+            "responsabilidades": [
+                "vitro, dispositivos médicos, ejecutar programas de capacitación, promoción",
+                "seguimiento y evaluación de proveedores, realización de informes, reportes,",
+                "institucionales, apertura se redes de apoyo, coordinación y seguimiento",
+                "externas."
+            ]
+        },
+        {
+            "empresa": "Nombre de la empresa FUNDACION BANCO NACIONAL DE SANGRE HEMOLIFE",
+            "cargo": "COORDINADOR TECNICO",
+            "fecha_inicio": null,
+            "fecha_fin": null,
+            "duracion_meses": null,
+            "responsabilidades": [
+                "Fecha ingreso/retiro Enero de 2023 / Marzo de 2023",
+                "Funciones y logros Coordinación y supervisión de calidad, desarrollo e"
+            ]
+        },
+        {
+            "empresa": "reactivos y dispositivos médicos, realización de informes, desarrollo",
+            "cargo": "auditorías, validación de no conformidades, generación de reportes y análisis,",
+            "fecha_inicio": null,
+            "fecha_fin": null,
+            "duracion_meses": null,
+            "responsabilidades": [
+                "responsable en tecnovigilancia y reactivovigilancia, validación y optimización",
+                "elaboración de documentación para entes de control, apertura de apertura",
+                "seguimiento y evaluación de proveedores, verificación de almacenamiento,",
+                "correcto uso de reactivos de diagnóstico in vitro y dispositivos médicos."
+            ]
+        },
+        {
+            "empresa": "Nombre de la empresa BANCO NACIONAL DE",
+            "cargo": "COORDINADOR TECNICO",
+            "fecha_inicio": null,
+            "fecha_fin": null,
+            "duracion_meses": null,
+            "responsabilidades": [
+                "SANGRE SAS",
+                "Fecha ingreso/retiro Abril de 2016 / Enero de 2023",
+                "Funciones y logros Coordinación y supervisión de calidad, desarrollo e"
+            ]
+        },
+        {
+            "empresa": "reactivos y dispositivos médicos, realización de informes, desarrollo",
+            "cargo": "auditorías, validación de no conformidades, generación de reportes y análisis,",
+            "fecha_inicio": null,
+            "fecha_fin": null,
+            "duracion_meses": null,
+            "responsabilidades": [
+                "responsable en tecnovigilancia y reactivovigilancia, validación y optimización",
+                "elaboración de documentación para entes de control, apertura de apertura",
+                "seguimiento y evaluación de proveedores, verificación de almacenamiento,",
+                "correcto uso de reactivos de diagnóstico in vitro y dispositivos médicos.",
+                "BACTERIOLOGO",
+                "Nombre de la empresa FUNDACION GRUPO ESTUDIO",
+                "BARRANQUILLA",
+                "de cultivos y pruebas en muestras de",
+                "de los resultados del laboratorio.",
+                "E IA / Avanzado",
+                "Fecha ingreso/retiro Marzo de 2014 / Abril de 2016",
+                "Funciones y logros Análisis de Laboratorio Realización",
+                "sangre, orina, tejidos, etc.",
+                "Montaje de control de calidad para asegura la precisión",
+                "Elaboración de resultados e informes de laboratorio.",
+                "NIVEL EDUCATIVO",
+                "ESPECIALISTA EN INGENIERIA DE LA CALIDAD",
+                "Nivel educativo Especialización",
+                "Institución UNIVERSIDAD LIBRE -- SEDE BARRANQUILLA",
+                "Estado Graduado"
+            ]
+        },
+        {
+            "empresa": "Fecha finalización  de",
+            "cargo": null,
+            "fecha_inicio": "2019",
+            "fecha_fin": null,
+            "duracion_meses": null,
+            "responsabilidades": [
+                "BACTERIOLOGO",
+                "Nivel educativo Universitaria",
+                "Institución UNIVERSIDAD LIBRE -- SEDE BARRANQUILLA",
+                "Estado Graduado",
+                "Fecha finalización Julio",
+                "BACHILLER",
+                "Nivel educativo Básica Secundaria",
+                "Institución INEM",
+                "Estado Graduado"
+            ]
+        },
+        {
+            "empresa": "Fecha finalización  de",
+            "cargo": null,
+            "fecha_inicio": "2004",
+            "fecha_fin": null,
+            "duracion_meses": null,
+            "responsabilidades": []
+        }
+    ],
+    "educacion": [],
+    "habilidades": [
+        "Idiomas y dialectos",
+        "Idioma / nivel inglés /",
+        "Intermedio",
+        "Herramienta / nivel office completo /",
+        "Avanzado",
+        "Herramienta / nivel herramientas multimedia",
+        "Curso power bi ia / 2026"
+    ],
+    "skills_detectadas": {
+        "tecnicas": [
+            "NIA",
+            "POWER BI",
+            "AUDITORIA"
+        ],
+        "blandas": []
+    },
+    "cursos": [],
+    "referencias": "",
+    "años_experiencia_total": 0.0,
+    "cantidad_empleos": 8
+}

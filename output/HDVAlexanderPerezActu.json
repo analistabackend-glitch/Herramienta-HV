@@ -1,0 +1,234 @@
+{
+    "contacto": {
+        "email": "perezcardenas07@gmail.com",
+        "telefono": "3108714489"
+    },
+    "perfil_resumen": "INGENIERO INDUSTRIAL",
+    "experiencia": [
+        {
+            "empresa": "TORNILLOS Y PARTES PLAZA SA",
+            "cargo": "COORDINADOR DE PROCESOS",
+            "fecha_inicio": null,
+            "fecha_fin": null,
+            "duracion_meses": null,
+            "responsabilidades": []
+        },
+        {
+            "empresa": "BOGOTA, AGO/ - ENE/ 6 MESES",
+            "cargo": "Realizar auditorías internas y recepción de externas.",
+            "fecha_inicio": "2024",
+            "fecha_fin": "2025",
+            "duracion_meses": null,
+            "responsabilidades": [
+                "Diseño, elaboracion, actualizacion e implementacion de la",
+                "planeación estratégica Mapas de procesos, caracterización de",
+                "procesos, misión y visión, políticas, matrices, organigrama etc.",
+                "Elaborar, actualizar, controlar y garantizar el cumplimiento de",
+                "la documentación establecida en cada proceso formatos,",
+                "instructivos, manuales, perfiles de cargo, procedimientos,",
+                "programas, registros etc.",
+                "Supervisión de los procesos establecidos al igual que el",
+                "desempeño del personal involucrado.",
+                "Elaboración del listado maestro de documentos.",
+                "Rendición de cuentas, presentación de informes, consolidación",
+                "de indicadores, gestión de proveedores y contratistas.",
+                "Mejoramiento de métodos de trabajo, coordinación de equipos,",
+                "implementacion de metodologia 5 S en las instalaciones.",
+                "CONSORCIO METALURGICO NACIONAL SAS",
+                "COLMENA INSPECTOR SGI"
+            ]
+        },
+        {
+            "empresa": "BOGOTA, DIC/ - MAY/ 5 MESES",
+            "cargo": "Generación de auditorías internas de producto y atención de",
+            "fecha_inicio": "2023",
+            "fecha_fin": "2024",
+            "duracion_meses": null,
+            "responsabilidades": [
+                "Implementar e integrar los sistemas de gestión SST, Calidad,",
+                "Ambiente .",
+                "Optimización de los procesos mediante la mejora continua.",
+                "Identificación de peligros y riesgos, evaluación, valoración y",
+                "establecimiento de los respectivos controles necesarios.",
+                "Identificar impactos ambientales y generar de controles.",
+                "Proteger y promover la seguridad y salud de los colaboradores.",
+                "Implementación de herramientas de mejora continua, Lean",
+                "Manufacturing y 5 S con el objetivo de optimizar la operación.",
+                "Supervisión y control de actividades de alto riesgo espacios",
+                "confinados, riesgo eléctrico, trabajo en alturas, riesgo químico .",
+                "Garantizar el cumplimiento de normatividad legal vigente en",
+                "relación con la actividad económica de la organización."
+            ]
+        },
+        {
+            "empresa": "Atención efectiva y eficiente de emergencias",
+            "cargo": "auditorías externas de entes certificables.",
+            "fecha_inicio": null,
+            "fecha_fin": null,
+            "duracion_meses": null,
+            "responsabilidades": []
+        }
+    ],
+    "educacion": [
+        {
+            "titulo": null,
+            "institucion": null,
+            "año": "2022"
+        },
+        {
+            "titulo": null,
+            "institucion": null,
+            "año": "2015"
+        },
+        {
+            "titulo": "HOSPITALARIA INGENIERO RESIDENTE",
+            "institucion": null,
+            "año": "2018"
+        },
+        {
+            "titulo": null,
+            "institucion": null,
+            "año": "2020"
+        },
+        {
+            "titulo": null,
+            "institucion": null,
+            "año": "2013"
+        },
+        {
+            "titulo": null,
+            "institucion": null,
+            "año": "1995"
+        },
+        {
+            "titulo": "INGENIERO INDUSTRIAL",
+            "institucion": "UNIVERSIDAD AUTONOMA DE COLOMBIA",
+            "año": "2018"
+        },
+        {
+            "titulo": null,
+            "institucion": null,
+            "año": "2015"
+        },
+        {
+            "titulo": null,
+            "institucion": "COLEGIO NUESTRA SEÑORA DE FATIMA",
+            "año": "2010"
+        },
+        {
+            "titulo": null,
+            "institucion": null,
+            "año": "2004"
+        }
+    ],
+    "habilidades": [
+        "Personal",
+        "Comunicación asertiva",
+        "Pensamiento analítico",
+        "Criticó",
+        "Planeación y organización",
+        "Siempre en la búsqueda del",
+        "Mejoramiento continuo y la optimización de los recursos.",
+        "Trabajo en equipo",
+        "Capacidad de adaptación",
+        "Compromiso",
+        "Liderazgo",
+        "Comunicación asertiva",
+        "Ética profesional y personal",
+        "Capacidad de análisis y",
+        "Toma de decisiones.",
+        "Metodologías agiles de",
+        "Mejoramiento continuo.",
+        "Software utilizados",
+        "Paquete office",
+        "Auto cad",
+        "Bizagi",
+        "Bases de datos",
+        "Programas de producción",
+        "Siesa",
+        "Isolution",
+        "Plataformas de proveedores",
+        "Matrimol sas coordinador de",
+        "Sistemas de gestion",
+        "Bogota",
+        "Sep/2022",
+        "Ene/2023 4 meses",
+        "Actualizacion e implementacion del sgc de acuerdo a la ntc",
+        "Iso 9001",
+        "2015.",
+        "Actualizacion e implementacion sg",
+        "Sst de acuerdo a la ntc",
+        "Iso 45001",
+        "2018.",
+        "Control documental físico y digital de los sistemas de gestión.",
+        "Estandarización de procesos e implementación de",
+        "Herramientas lean manufacturing para mejora continua.",
+        "Supervisión de forma directa del desempeño de los líderes de",
+        "Los procesos y sus equipos en relación con las actividades",
+        "Involucradas con los sistemas de gestión."
+    ],
+    "skills_detectadas": {
+        "tecnicas": [
+            "NIA",
+            "EXCEL",
+            "ISO 9001",
+            "AUDITORIA"
+        ],
+        "blandas": [
+            "Liderazgo",
+            "Comunicacion",
+            "Trabajo en equipo",
+            "Analitico",
+            "Etica",
+            "Organizacion"
+        ]
+    },
+    "cursos": [
+        "Innovación y creatividad en procesos de diseño y",
+        "Producción sustentable.",
+        "Planificación de un sistema de gestión de calidad",
+        "Ntc iso 9001.",
+        "Auditoria interna de calidad",
+        "Ntc iso 9001.",
+        "Sistema de gestión de la seguridad y salud en el",
+        "Trabajo sg",
+        "Sst 50 horas .",
+        "Avanzado trabajo seguro en alturas.",
+        "Manejo básico de la herramienta de hojas de cálculo",
+        "Excel.",
+        "Divulgacion tecnologica sobre el sg",
+        "Sst.",
+        "Datos",
+        "Personales",
+        "Cc 1031160140",
+        "Fecha de expedicion",
+        "Contacto",
+        "01/08/2013",
+        "Fecha de nacimiento",
+        "26/07/1995",
+        "Cealsleta 5d4o c 2iv5i l",
+        "3s2o sltuerr o",
+        "Licencia de conduccion si",
+        "Cat",
+        "3102674211",
+        "Perezcardenas07@gmail.com",
+        "Soportes",
+        "Academicos",
+        "Lperez.cardenas@fuac.edu.co",
+        "Seran entregados a",
+        "Solicitud",
+        "Soportes",
+        "Academicos",
+        "Laborales",
+        "Seran entregados a",
+        "Seran entregados a",
+        "Solicitud",
+        "Solicitud",
+        "Laborales",
+        "Seran entregadas a",
+        "Solicitud"
+    ],
+    "referencias": "Leidy Paola Montaña\nIngeniera de sistemas\n3108714489\nJavier Tristancho\nIngeniero Mecanico\n3105898742\nLiliana Marcela\nSantoyo\nProfesional en SST\n3045753421\nTROFORMAS SAS JEFE DE PLANTA\nBOGOTA, FEB/2022 - MAY/2022 4 MESES\nPlanificar y asegurar la disponibilidad y buen consumo de la\nmateria prima e insumos necesarios en los procesos\nproductivos.\nsupervisar y controlar el funcionamiento de las máquinas y\nherramientas.\nSupervisar las acciones de mantenimiento ejercidas en\nmáquina e instalaciones de la planta de producción.\nCálculo de eficiencias productivas y demás indicadores del\nproceso eficiencia, eficacia, productividad,desperdicios .\nManejo de personal y su respectiva programación y\ndistribución en los diferentes turnos.\nParticipación activa en juntas directivas y reuniones.\nDefinir la programación de producción para las diferentes\náreas así como la emisión de las órdenes de producción.\nRealizar informes de producción de las diferentes áreas.\nAsegurar el cumplimiento de las especificaciones técnicas de\nlos productos por medio del control de calidad.\nVelar por el orden, aseo y mantenimiento de las instalaciones\nde la planta de producción.\nSEGURIDAD ATEMPI LTDA ANALISTA HSEQ\nBOGOTA, FEB/2021 - FEB/2022 1 AÑO\nEjecutar programa de inspecciones en cada uno de los\npuestos de trabajo.\nImplementar y liderar el programa de seguridad vial.\nParticipar en jornadas de reclutamiento Entrevistas,\naplicación de pruebas, verificación de documentos y\nantecedentes .\nImplementación del SGA bajo la NTC ISO 14000 2015.\nGestión de proveedores y contratistas.",
+    "años_experiencia_total": 0.0,
+    "cantidad_empleos": 4
+}

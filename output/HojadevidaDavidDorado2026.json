@@ -1,0 +1,186 @@
+{
+    "contacto": {
+        "email": "daviddorado176@gmail.com",
+        "telefono": "3133258587"
+    },
+    "perfil_resumen": "Dorado Vargas\n2543 Calle 3ᵃ 24 - 95 Bogotá, Colombia\ncontador público y especialización en revisoría fiscal, me gustan los desafíos, presentar\nMe he desempeñado en labores como asistente contable, responsable de la\nde caja, facturas de venta, causaciones, nomina, comprobantes de egresos, elaboración\ntesorería, notas contables, cierres de mes, reversiones. Soy una persona seria,",
+    "experiencia": [
+        {
+            "empresa": null,
+            "cargo": "Contador Público Certificado",
+            "fecha_inicio": null,
+            "fecha_fin": null,
+            "duracion_meses": null,
+            "responsabilidades": [
+                "daviddorado176@gmail.com 316 464"
+            ]
+        },
+        {
+            "empresa": "Soy una persona comprometida con mi trabajo,",
+            "cargo": "OBJETIVO PROFESIONAL",
+            "fecha_inicio": null,
+            "fecha_fin": null,
+            "duracion_meses": null,
+            "responsabilidades": [
+                "ideas innovadoras y emprender con nuevos proyectos.",
+                "presentación de informes, elaboración de recibos",
+                "de impuestos distritales, conciliaciones bancarias,",
+                "responsable y motivada para avanzar profesionalmente.",
+                "creatividad, buenas relaciones interpersonales,",
+                "calidad, eficiencia y eficacia, además, asumiendo",
+                "De 01/07/2025, 31/12/2025",
+                "Taxac Group"
+            ]
+        },
+        {
+            "empresa": "Reversiones",
+            "cargo": "Asistente de facturación",
+            "fecha_inicio": null,
+            "fecha_fin": null,
+            "duracion_meses": null,
+            "responsabilidades": [
+                "Recibos de cajas",
+                "Factura de venta",
+                "Notas crédito",
+                "Cuentas de cobro",
+                "Informe a gerencia",
+                "Cruces de anticipos",
+                "Manejo de base de datos",
+                "Liquidación de impuestos",
+                "inscripciones a municipios",
+                "cancelaciones a municipios",
+                "cruce de anticipos",
+                "Gestioné la facturación para Ecopetrol en sus",
+                "constante de los procesos. Adicionalmente, realicé",
+                "de afectación en la compañía.",
+                "Asimismo, estuve a cargo de la cartera de clientes,",
+                "al día para su correcta presentación y un mejor",
+                "realizando la rectificación de información cuando",
+                "frecuente con los municipios correspondientes.",
+                "De 02/05/2022, 18/04/2025",
+                "Toscana Cheese Company, Secaucus, New Jersey"
+            ]
+        },
+        {
+            "empresa": "Funciones realizadas",
+            "cargo": "Supervisor de Entrada y Salida de Mercadería",
+            "fecha_inicio": null,
+            "fecha_fin": null,
+            "duracion_meses": null,
+            "responsabilidades": [
+                "Control de inventario",
+                "Revisión de órdenes previo recibo y envío",
+                "Liberación de envíos",
+                "Atención a clientes",
+                "Gestión de personal",
+                "De 07/10/2020, 25/08/2021 , Bogotá D.C",
+                "Unifianza s.a"
+            ]
+        },
+        {
+            "empresa": "Funciones realizadas",
+            "cargo": "Asistente de tesorería",
+            "fecha_inicio": null,
+            "fecha_fin": null,
+            "duracion_meses": null,
+            "responsabilidades": [
+                "Reversiones",
+                "Recibos de cajas",
+                "Factura de venta",
+                "Notas crédito",
+                "Revisión de la cuenta 1 activo",
+                "contable orbis, Helisa , word ofice .",
+                "De 02/01/2019, 31/12/2019",
+                "Saem Colombia sas"
+            ]
+        },
+        {
+            "empresa": "Funciones realizadas",
+            "cargo": "Asistente contable",
+            "fecha_inicio": null,
+            "fecha_fin": null,
+            "duracion_meses": null,
+            "responsabilidades": [
+                "Recibos de caja",
+                "Factura de ventas",
+                "Notas de Contabilidad",
+                "Comprobante de egresos",
+                "Conciliaciones bancarias",
+                "Revisión de cuentas",
+                "Atención a publico",
+                "Cuentas de cobro",
+                "Manejo de efectivo",
+                "Informe a gerencia",
+                "Informe a junta de accionistas",
+                "Manejo de base de datos",
+                "Impuestos Distritales Ica ,IVA , retención en la fuente",
+                "Provisiones",
+                "De 20/10/2017, 15/09/2018, Bogotá D.C",
+                "Unifianza s.a"
+            ]
+        },
+        {
+            "empresa": "Funciones realizadas",
+            "cargo": "Asistente de cartera contable",
+            "fecha_inicio": null,
+            "fecha_fin": null,
+            "duracion_meses": null,
+            "responsabilidades": [
+                "Reversiones",
+                "Recibos de caja",
+                "Factura de venta",
+                "Contabilización de CDT",
+                "Notas crédito",
+                "Revisión de la cuenta 1 activo",
+                "Atención a publico",
+                "Cuentas de cobro",
+                "Manejo de efectivo",
+                "Informe a gerencia",
+                "Informe a junta de accionistas"
+            ]
+        }
+    ],
+    "educacion": [
+        {
+            "titulo": "Especialización Revisoría fiscal Contador público",
+            "institucion": "Corporación Universitaria Republicana Corporación Universitaria Republicana"
+        },
+        {
+            "titulo": null,
+            "institucion": "Sena Presencial Colegio Nacional Nicolás Esguerra",
+            "año": "2021"
+        },
+        {
+            "titulo": null,
+            "institucion": null,
+            "año": "2014"
+        }
+    ],
+    "habilidades": [
+        "Conocimientos en informática word intermedio",
+        "Excel avanzado",
+        "Manejo del programa",
+        "Parametrización desde cero",
+        "Inglés a1",
+        "Comunicacion social."
+    ],
+    "skills_detectadas": {
+        "tecnicas": [
+            "NIA",
+            "EXCEL",
+            "CONTABILIDAD",
+            "NOMINA",
+            "TESORERIA",
+            "CARTERA"
+        ],
+        "blandas": [
+            "Liderazgo",
+            "Comunicacion",
+            "Trabajo en equipo"
+        ]
+    },
+    "cursos": [],
+    "referencias": "Nidia Gallejas\nToscana Cheese Company\nCargo Shipping Receiving\nManager\nTeléfono 1 973 955 6312\nEmail\nshipping@toscanacheese.com\n\nJilmar Raúl Hurtado Hernández\nRsm Colombia\nCargo Senior de aseguramiento\nEmail jilmar.hurtado@rsmco.co\nTeléfono 3133258587\nKevin Andrés Gallego Ciro\nUnifianza s.a\nCargo Coordinador de facturación\nEmail Kevin.gallego@unifianza.com.co\nTeléfono 314 444 07 46\nVicente Cervera pinzon\nCredibanco\nCargo Administrador de cartera\nTeléfono 3165296448\nJohn Prada\nBanco Caja Social\nCargo Supervisor de Cobranza\nTeléfono 317 331 79 71\nAstrid Vargas Sánchez\nOficial de Operaciones\nBanco de Bogotá\nTeléfono 319 5386766\nJosé Alexander Vargas\nEspecialista de\nMigración de Data\nLinktic\nTeléfono 300 2778974\nJEFFERSON DAVID DORADO VARGAS\nC.C. 1.032.480.814\nMóvil 3164642543",
+    "años_experiencia_total": 0.0,
+    "cantidad_empleos": 7
+}
