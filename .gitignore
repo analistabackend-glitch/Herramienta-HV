@@ -3,3 +3,7 @@ venv/
 __pycache__/
 *.pyc
 .env
+config_local.py
+token.pickle
+credentials.json
+descargas_temp/
