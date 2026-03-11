@@ -44,8 +44,11 @@ client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 DIR_PRIMER_FILTRO  = Path("Resultados Primer Filtro")
 DIR_SEGUNDO_FILTRO = Path("Resultados Segundo Filtro")
 
-# Carpeta raíz de salida
+# Carpeta raíz de salida para JSONs intermedios
 DIR_TERCER_FILTRO  = Path("Resultados Tercer Filtro")
+
+# Carpeta de resultados finales (HVs clasificadas + Excel) — inyectada por primer_filtro.py
+DIR_RESULTADOS     = Path("Resultados")
 
 # Umbrales de clasificación
 UMBRAL_OPCIONADO = 70   # score >= 70 → Opcionado
@@ -89,6 +92,16 @@ def limpiar_json(texto: str) -> str:
 # Puede ser inyectada por primer_filtro.py para evitar ambigüedad entre vacantes
 CARPETA_VACANTE_ACTIVA = None
 
+# Inyectados por primer_filtro.py para el Excel unificado
+CFG_PRIMER_FILTRO     = None   # dict con parámetros del filtro 1
+RESUMEN_PRIMER_FILTRO = None   # lista de dicts con resultado de cada candidato
+ARCHIVOS_NO_HV        = None   # lista de dicts {archivo, motivo} del segundo filtro
+
+# Callbacks para la barra 3 de la GUI (inyectados por primer_filtro.py)
+_progress_clas_cb: object = None   # callable(actual, total) o None
+_total_clas_para_prog: int = 1     # total de JSONs a clasificar
+_contador_clas: int = 0            # contador interno
+
 
 def subcarpeta_mas_reciente(raiz: Path) -> Path:
     """Retorna la subcarpeta más reciente (por mtime) dentro de raiz."""
@@ -130,20 +143,52 @@ def encontrar_json_vacante() -> dict | None:
         return json.load(f)
 
 
-def encontrar_pdf_candidato(nombre_candidato: str) -> Path | None:
+def encontrar_pdf_candidato(nombre_candidato: str,
+                            nombre_archivo_original: str = None) -> Path | None:
     """
-    Busca el PDF o DOCX del candidato SOLO dentro de la carpeta de vacante activa,
-    así nunca confunde archivos de procesos anteriores.
+    Busca el PDF o DOCX del candidato dentro de la carpeta de vacante activa.
+
+    Estrategia en dos pasos:
+    1. Matching por tokens normalizados del nombre del candidato (tolerante a tildes).
+    2. Si falla (nombre inventado por IA), usa el nombre_archivo_original como fallback
+       directo — así documentos como libros o manuales siempre se copian correctamente.
     """
+    import unicodedata
+
+    def _norm(s: str) -> str:
+        s = unicodedata.normalize("NFD", s)
+        s = "".join(c for c in s if unicodedata.category(c) != "Mn")
+        return re.sub(r"[^a-z0-9]", "", s.lower())
+
     carpeta = carpeta_vacante_activa()
-    nombre_norm = re.sub(r"\s+", "_", nombre_candidato.strip())
+
+    # ── Paso 1: matching por tokens del nombre del candidato ──────────
+    tokens_cand = [_norm(t) for t in nombre_candidato.split() if len(t) > 2]
+    mejor_archivo = None
+    mejor_score   = 0
+
     for ext in ("*.pdf", "*.docx"):
         for f in carpeta.glob(ext):
-            stem = f.stem
-            if stem.lower() == nombre_norm.lower():
-                return f
-            if nombre_candidato.split()[0].lower() in stem.lower():
-                return f
+            stem_norm = _norm(f.stem)
+            coinciden = sum(1 for t in tokens_cand if t in stem_norm)
+            if coinciden > mejor_score:
+                mejor_score   = coinciden
+                mejor_archivo = f
+
+    if mejor_score >= 2:
+        return mejor_archivo
+
+    # ── Paso 2: fallback por nombre del archivo original ─────────────
+    # Cuando la IA inventó un nombre (ej: "Vinicio Ramos" para OSCAR_Buitrago_gomez.pdf),
+    # el matching por tokens falla. Usamos el nombre del archivo del JSON directamente.
+    if nombre_archivo_original:
+        candidato_norm = _norm(nombre_archivo_original)
+        for ext in ("*.pdf", "*.docx"):
+            for f in carpeta.glob(ext):
+                if _norm(f.name) == candidato_norm:
+                    print(f"  ℹ️  Archivo encontrado por nombre de fichero: {f.name}")
+                    return f
+
     return None
 
 
@@ -197,7 +242,8 @@ def verificar_estabilidad(cv_data: dict) -> tuple:
 def evaluar_candidato(cv_data: dict, vacante_data: dict) -> dict:
     """
     Llama a Groq para evaluar el match entre el CV y la vacante.
-    Retorna un dict con: score_exp, score_aca, score_final, razones.
+    Retorna un dict con: score_exp, score_aca, score_final, razones,
+    bonus_keywords, keywords_encontradas.
     """
     peso_exp = vacante_data.get("peso_experiencia_laboral", "50 %")
     peso_aca = vacante_data.get("peso_formacion_academica", "50 %")
@@ -210,6 +256,28 @@ def evaluar_candidato(cv_data: dict, vacante_data: dict) -> dict:
     pexp = _pct(peso_exp)
     paca = _pct(peso_aca)
 
+    # ── Palabras clave: preparar bloque de contexto compacto ─────────────
+    # Se leen desde vacante_data (guardadas en el JSON de descripción).
+    # Se limitan a 300 chars para no comprometer el límite de 6000 TPM.
+    raw_kw = vacante_data.get("palabras_clave", "") or ""
+    keywords_lista = [k.strip() for k in raw_kw.split(",") if k.strip()]
+    bloque_kw = ""
+    if keywords_lista:
+        kw_str = ", ".join(keywords_lista)[:300]   # tope duro de 300 chars ≈ 75 tokens
+        bloque_kw = f"""
+=== CONTEXTO ADICIONAL — PALABRAS CLAVE DEL SECTOR ===
+Las siguientes palabras clave describen el sector, área o empresas relevantes para esta vacante.
+Tenlas en cuenta al evaluar la experiencia: si el candidato las menciona (explícita o implícitamente),
+es señal de experiencia pertinente que debe subir el score.
+Palabras clave: {kw_str}
+"""
+
+    # ── Serializar CV con límite para no exceder tokens ──────────────────
+    # Presupuesto estimado: prompt base ~900 tokens + CV ~700 tokens + kw ~80 tokens < 1800 tokens
+    cv_str = json.dumps(cv_data, ensure_ascii=False, indent=2)
+    if len(cv_str) > 2800:   # ~700 tokens
+        cv_str = cv_str[:2800] + "\n  ... (truncado)"
+
     prompt = f"""
 Eres un evaluador experto de hojas de vida para el área de Recursos Humanos.
 
@@ -219,9 +287,9 @@ Tu tarea: evaluar qué tan bien el candidato se ajusta a la vacante.
 Nombre: {vacante_data.get("vacante", "")}
 Descripción de tareas:
 {vacante_data.get("descripcion_tareas", "No disponible")}
-
+{bloque_kw}
 === CV DEL CANDIDATO ===
-{json.dumps(cv_data, ensure_ascii=False, indent=2)}
+{cv_str}
 
 === INSTRUCCIONES DE EVALUACIÓN ===
 Genera una puntuación del 0 al 100 para dos dimensiones:
@@ -251,6 +319,8 @@ Responde ÚNICAMENTE con este JSON (sin texto adicional, sin markdown):
 """
 
     try:
+        import time as _time
+        _time.sleep(2)   # delay entre consultas a la IA
         r = client.chat.completions.create(
             model="llama-3.1-8b-instant",
             messages=[{"role": "user", "content": prompt}],
@@ -259,18 +329,41 @@ Responde ÚNICAMENTE con este JSON (sin texto adicional, sin markdown):
         contenido = limpiar_json(r.choices[0].message.content)
         data = json.loads(contenido)
 
-        # Validar y redondear scores
+        # Validar y redondear scores de la IA
         for k in ("score_experiencia", "score_academico", "score_final"):
             data[k] = max(0, min(100, round(float(data.get(k, 0)))))
+
+        # ── Bonus por palabras clave (post-IA, sin gastar tokens extra) ──
+        # Se detecta cuántas keywords aparecen en el texto del CV.
+        # Bonus: +2 pts por keyword encontrada, máximo +10 pts,
+        # nunca supera 100 en score_final.
+        bonus = 0
+        encontradas = []
+        if keywords_lista:
+            import unicodedata as _ud
+            def _norm_kw(s):
+                s = _ud.normalize("NFD", s.lower())
+                return "".join(c for c in s if _ud.category(c) != "Mn")
+            cv_texto_norm = _norm_kw(json.dumps(cv_data, ensure_ascii=False))
+            for kw in keywords_lista:
+                if _norm_kw(kw) in cv_texto_norm:
+                    encontradas.append(kw)
+            bonus = min(len(encontradas) * 2, 10)
+            data["score_final"] = min(100, data["score_final"] + bonus)
+
+        data["bonus_keywords"]       = bonus
+        data["keywords_encontradas"] = encontradas
 
         return data
 
     except Exception as e:
         print(f"  ⚠️  Error en evaluación IA: {e}")
         return {
-            "score_experiencia": 0,
-            "score_academico":   0,
-            "score_final":       0,
+            "score_experiencia"   : 0,
+            "score_academico"     : 0,
+            "score_final"         : 0,
+            "bonus_keywords"      : 0,
+            "keywords_encontradas": [],
             "razones": {
                 "experiencia": "No se pudo evaluar.",
                 "academico":   "No se pudo evaluar.",
@@ -296,6 +389,8 @@ def clasificar(score: float) -> str:
 # ─────────────────────────────────────────
 
 def main():
+    global _contador_clas
+    _contador_clas = 0
 
     # 1. Preparar carpetas de salida
     vacante_data = encontrar_json_vacante()
@@ -304,11 +399,16 @@ def main():
 
     nombre_vacante = vacante_data.get("vacante", "vacante")
     nombre_limpio  = re.sub(r"[^\w\s-]", "", nombre_vacante).strip().replace(" ", "_")[:60]
-    ts             = datetime.now().strftime("%Y-%m")
-    carpeta_base   = DIR_TERCER_FILTRO / f"{nombre_limpio}_{ts}"
 
+    # Carpeta de intermedios: JSONs de evaluación por candidato
+    dir_json_eval = DIR_TERCER_FILTRO
+    dir_json_eval.mkdir(parents=True, exist_ok=True)
+
+    # Carpeta de resultados finales: HVs clasificadas + Excel
+    # DIR_RESULTADOS es inyectada por primer_filtro.py con la estructura:
+    #   Ejecuciones/<vacante>_<ts>/Resultados/
     for sub in (CARPETA_OPCIONADO, CARPETA_PROBABLE, CARPETA_DESCARTADO):
-        (carpeta_base / sub).mkdir(parents=True, exist_ok=True)
+        (DIR_RESULTADOS / sub).mkdir(parents=True, exist_ok=True)
 
     # 2. Listar JSONs del segundo filtro
     jsons = list(DIR_SEGUNDO_FILTRO.glob("*.json"))
@@ -327,6 +427,14 @@ def main():
 
         print(f"📋 Procesando: {json_path.name}")
 
+        # Actualizar barra 3
+        _contador_clas += 1
+        if _progress_clas_cb:
+            try:
+                _progress_clas_cb(_contador_clas, _total_clas_para_prog)
+            except Exception:
+                pass
+
         try:
             with open(json_path, encoding="utf-8") as f:
                 cv_data = json.load(f)
@@ -334,7 +442,44 @@ def main():
             print(f"  ❌ No se pudo leer JSON: {e}")
             continue
 
+        # ── Detectar documentos que NO son hojas de vida ─────────────────
+        if cv_data.get("es_hoja_de_vida") is False:
+            motivo_no_hv = cv_data.get("motivo_rechazo_hv", "Documento no identificado como hoja de vida.")
+            nombre_archivo = cv_data.get("archivo_original", json_path.stem)
+            # Usar el nombre del archivo como nombre del candidato
+            nombre_candidato = (nombre_archivo
+                                .replace(".pdf", "").replace(".docx", "")
+                                .replace("_", " "))
+            print(f"  🚫 NO ES HV — {nombre_candidato}: {motivo_no_hv}")
+
+            # Copiar el archivo a Descartados — usar nombre del archivo como fallback
+            archivo_original = encontrar_pdf_candidato(
+                nombre_candidato,
+                nombre_archivo_original=nombre_archivo
+            )
+            archivo_copiado  = None
+            if archivo_original:
+                nombre_seguro = re.sub(r"[^\w\s-]", "", nombre_candidato).strip().replace(" ", "_")
+                destino = DIR_RESULTADOS / CARPETA_DESCARTADO / f"{nombre_seguro}{archivo_original.suffix}"
+                shutil.copy2(archivo_original, destino)
+                archivo_copiado = str(destino)
+
+            resumen.append({
+                "Candidato"            : nombre_candidato,
+                "Score Final (%)"      : 0,
+                "Score Experiencia (%)": 0,
+                "Score Académico (%)"  : 0,
+                "Clasificación"        : CARPETA_DESCARTADO,
+                "Razón Experiencia"    : f"⚠️ DOCUMENTO NO CORRESPONDE A UNA HOJA DE VIDA. {motivo_no_hv} — Verifique manualmente si el archivo fue subido por error.",
+                "Razón Académica"      : "No analizado — el documento no es una hoja de vida.",
+                "Resumen"              : "⚠️ Revisar manualmente: el sistema detectó que este archivo no es una hoja de vida.",
+                "Archivo"              : archivo_copiado or "No encontrado",
+            })
+            continue
+
         # Nombre del candidato desde el JSON del segundo filtro
+        # El nombre_archivo_original permite el fallback cuando la IA inventó un nombre
+        nombre_archivo_original = cv_data.get("archivo_original", json_path.name)
         nombre_candidato = (
             cv_data.get("contacto", {}).get("nombre")
             or json_path.stem.replace("_", " ").replace(".pdf", "").replace(".docx", "")
@@ -346,13 +491,16 @@ def main():
         inestable, motivo_estabilidad = verificar_estabilidad(cv_data)
         if inestable:
             print(f"  🚫 DESCARTADO por estabilidad — {motivo_estabilidad}")
+            # Llamar a la IA igual para obtener el análisis ACADÉMICO completo
+            evaluacion_ia = evaluar_candidato(cv_data, vacante_data)
             evaluacion = {
                 "score_experiencia": 0,
-                "score_academico":   0,
+                "score_academico":   evaluacion_ia.get("score_academico", 0),
                 "score_final":       0,
                 "razones": {
                     "experiencia": motivo_estabilidad,
-                    "academico":   "",
+                    "academico":   (evaluacion_ia.get("razones", {}).get("academico")
+                                    or "Ver resumen general."),
                     "resumen":     "Descartado automáticamente por regla de estabilidad laboral.",
                 },
             }
@@ -361,29 +509,39 @@ def main():
             razones       = evaluacion["razones"]
         else:
             # Evaluar con IA
-            evaluacion = evaluar_candidato(cv_data, vacante_data)
+            evaluacion    = evaluar_candidato(cv_data, vacante_data)
             score         = evaluacion["score_final"]
             clasificacion = clasificar(score)
             razones       = evaluacion.get("razones", {})
 
+        # ── Garantizar que ninguna razón quede vacía ───────────────────────
+        resumen_gral = razones.get("resumen") or ""
+        if not razones.get("experiencia"):
+            razones["experiencia"] = resumen_gral or "Sin información de experiencia disponible."
+        if not razones.get("academico"):
+            razones["academico"] = resumen_gral or "Sin información académica disponible."
+
         print(f"  📊 Score: {score:.0f}% → {clasificacion}")
 
-        # Copiar archivo original a la carpeta de clasificación
-        archivo_original = encontrar_pdf_candidato(nombre_candidato)
+        # Copiar PDF/DOCX a la carpeta de Resultados (entregable final)
+        archivo_original = encontrar_pdf_candidato(
+            nombre_candidato,
+            nombre_archivo_original=nombre_archivo_original
+        )
         archivo_copiado  = None
 
         if archivo_original:
             nombre_archivo = re.sub(r"[^\w\s-]", "", nombre_candidato).strip().replace(" ", "_")
-            destino = carpeta_base / clasificacion / f"{nombre_archivo}{archivo_original.suffix}"
+            destino = DIR_RESULTADOS / clasificacion / f"{nombre_archivo}{archivo_original.suffix}"
             shutil.copy2(archivo_original, destino)
             archivo_copiado = str(destino)
-            print(f"  📁 Copiado a: {destino.relative_to(DIR_TERCER_FILTRO)}")
+            print(f"  📁 Copiado a: {destino}")
         else:
             print(f"  ⚠️  No se encontró archivo PDF/DOCX para: {nombre_candidato}")
 
-        # Guardar JSON de evaluación junto al archivo
-        nombre_seguro = re.sub(r'[^\w\s-]', '', nombre_candidato).strip().replace(' ', '_')
-        eval_json_path = carpeta_base / clasificacion / f"{nombre_seguro}_evaluacion.json"
+        # Guardar JSON de evaluación en la carpeta de Intermedios/Tercer Filtro
+        nombre_seguro  = re.sub(r'[^\w\s-]', '', nombre_candidato).strip().replace(' ', '_')
+        eval_json_path = dir_json_eval / f"{nombre_seguro}_evaluacion.json"
         with open(eval_json_path, "w", encoding="utf-8") as f:
             json.dump({
                 "candidato"           : nombre_candidato,
@@ -391,6 +549,8 @@ def main():
                 "score_experiencia"   : evaluacion["score_experiencia"],
                 "score_academico"     : evaluacion["score_academico"],
                 "score_final"         : score,
+                "bonus_keywords"      : evaluacion.get("bonus_keywords", 0),
+                "keywords_encontradas": evaluacion.get("keywords_encontradas", []),
                 "clasificacion"       : clasificacion,
                 "razon_experiencia"   : razones.get("experiencia", ""),
                 "razon_academico"     : razones.get("academico", ""),
@@ -400,47 +560,65 @@ def main():
                 "fecha_evaluacion"    : datetime.now().strftime("%Y-%m-%d %H:%M"),
             }, f, ensure_ascii=False, indent=2)
 
+        # Nota de bonus para mostrar en el resumen
+        bonus_val = evaluacion.get("bonus_keywords", 0)
+        kw_enc    = evaluacion.get("keywords_encontradas", [])
+        nota_bonus = (f"  [+{bonus_val} pts bonus — keywords: {', '.join(kw_enc)}]"
+                      if bonus_val > 0 else "")
+
         resumen.append({
-            "Candidato"           : nombre_candidato,
-            "Score Final (%)"     : score,
-            "Score Experiencia (%)": evaluacion["score_experiencia"],
-            "Score Académico (%)" : evaluacion["score_academico"],
-            "Clasificación"       : clasificacion,
-            "Razón Experiencia"   : razones.get("experiencia", ""),
-            "Razón Académica"     : razones.get("academico", ""),
-            "Resumen"             : razones.get("resumen", ""),
-            "Archivo"             : archivo_copiado or "No encontrado",
+            "Candidato"             : nombre_candidato,
+            "Score Final (%)"       : score,
+            "Score Experiencia (%)" : evaluacion["score_experiencia"],
+            "Score Académico (%)"   : evaluacion["score_academico"],
+            "Bonus Keywords (pts)"  : bonus_val,
+            "Keywords encontradas"  : ", ".join(kw_enc) if kw_enc else "",
+            "Clasificación"         : clasificacion,
+            "Razón Experiencia"     : razones.get("experiencia", "") + nota_bonus,
+            "Razón Académica"       : razones.get("academico", ""),
+            "Resumen"               : razones.get("resumen", ""),
+            "Archivo"               : archivo_copiado or "No encontrado",
         })
 
-    # 3. Generar Excel resumen
+    # 3. Generar Excel UNIFICADO en la carpeta de Resultados (entregable final)
     if resumen:
-        df = pd.DataFrame(resumen)
+        try:
+            from generador_excel_unificado import generar_excel_unificado
 
-        # Ordenar por score descendente
-        df = df.sort_values("Score Final (%)", ascending=False).reset_index(drop=True)
+            cfg_f1      = CFG_PRIMER_FILTRO     or {}
+            resumen_f1  = RESUMEN_PRIMER_FILTRO or []
+            no_hv_lista = ARCHIVOS_NO_HV        or []
 
-        excel_path = carpeta_base / f"resumen_evaluacion_{nombre_limpio}.xlsx"
+            if not cfg_f1:
+                cfg_f1 = {
+                    "vacante"         : nombre_vacante,
+                    "url_vacante"     : vacante_data.get("url_formulario", ""),
+                    "peso_exp"        : re.sub(r"[^\d]", "", str(vacante_data.get("peso_experiencia_laboral", "50"))),
+                    "peso_aca"        : re.sub(r"[^\d]", "", str(vacante_data.get("peso_formacion_academica", "50"))),
+                    "edad_min": "", "edad_max": "", "sal_min": None,
+                    "sal_max": None, "requiere_sabados": None,
+                }
 
-        with pd.ExcelWriter(excel_path, engine="openpyxl") as writer:
+            excel_path = generar_excel_unificado(
+                resumen_primer_filtro = resumen_f1,
+                resumen_tercer_filtro = resumen,
+                cfg_filtro1           = cfg_f1,
+                vacante_data          = vacante_data,
+                carpeta_salida        = DIR_RESULTADOS,
+                umbral_opcionado      = UMBRAL_OPCIONADO,
+                umbral_probable       = UMBRAL_PROBABLE,
+                archivos_no_hv        = no_hv_lista,
+            )
+            print(f"\n✅ Excel unificado generado: {excel_path}")
 
-            df.to_excel(writer, index=False, sheet_name="Evaluación Candidatos")
-
-            # Hoja de parámetros
-            params = pd.DataFrame([
-                {"Parámetro": "Vacante",                  "Valor": nombre_vacante},
-                {"Parámetro": "Peso experiencia laboral", "Valor": vacante_data.get("peso_experiencia_laboral", "")},
-                {"Parámetro": "Peso formación académica", "Valor": vacante_data.get("peso_formacion_academica", "")},
-                {"Parámetro": "Umbral Opcionado",         "Valor": f"{UMBRAL_OPCIONADO} %"},
-                {"Parámetro": "Umbral Probable",          "Valor": f"{UMBRAL_PROBABLE} %"},
-                {"Parámetro": "Total evaluados",          "Valor": len(resumen)},
-                {"Parámetro": "Opcionados",               "Valor": sum(1 for r in resumen if r["Clasificación"] == CARPETA_OPCIONADO)},
-                {"Parámetro": "Probablemente opcionados", "Valor": sum(1 for r in resumen if r["Clasificación"] == CARPETA_PROBABLE)},
-                {"Parámetro": "Descartados",              "Valor": sum(1 for r in resumen if r["Clasificación"] == CARPETA_DESCARTADO)},
-                {"Parámetro": "Fecha ejecución",          "Valor": datetime.now().strftime("%Y-%m-%d %H:%M")},
-            ])
-            params.to_excel(writer, index=False, sheet_name="Parámetros")
-
-        print(f"\n✅ Excel generado: {excel_path}")
+        except Exception as e:
+            import traceback
+            print(f"  ⚠️  Error generando Excel unificado: {e}\n{traceback.format_exc()}")
+            df_fb = pd.DataFrame(resumen).sort_values("Score Final (%)", ascending=False)
+            excel_fallback = DIR_RESULTADOS / f"resumen_evaluacion_{nombre_limpio}.xlsx"
+            with pd.ExcelWriter(excel_fallback, engine="openpyxl") as writer:
+                df_fb.to_excel(writer, index=False, sheet_name="Evaluación Candidatos")
+            print(f"  ℹ️  Excel de respaldo: {excel_fallback}")
 
     # 4. Resumen en consola
     print("\n" + "═" * 55)
@@ -454,7 +632,8 @@ def main():
     print(f"  Opcionados               : {opc}")
     print(f"  Probablemente Opcionados : {prob}")
     print(f"  Descartados              : {desc}")
-    print(f"  Resultados en            : {carpeta_base}")
+    print(f"  Intermedios en           : {DIR_TERCER_FILTRO}")
+    print(f"  Resultados en            : {DIR_RESULTADOS}")
     print("═" * 55)
 
 

@@ -160,15 +160,77 @@ def normalizar_fecha(fecha):
     # solo año
     if re.fullmatch(r"\d{4}", fecha):
         return fecha + "-01"
-
-    # DD/MM/YYYY
+    
+    # DD/MM/YYYY  (19/01/2026 → 2026-01)
     m = re.fullmatch(r"(\d{1,2})[/\-](\d{1,2})[/\-](\d{4})", fecha)
     if m:
         mes = int(m.group(2))
         anio = int(m.group(3))
+
         if 1 <= mes <= 12 and _anio_valido(anio):
             return f"{anio}-{mes:02d}"
 
+    # DD/MM/YY  (01/06/25 → 2025-06)
+    m = re.fullmatch(r"(\d{1,2})[/\-](\d{1,2})[/\-](\d{2})", fecha)
+    if m:
+        mes = int(m.group(2))
+        anio = int(m.group(3))
+
+        if anio <= 30:
+            anio = 2000 + anio
+        else:
+            anio = 1900 + anio
+
+        if 1 <= mes <= 12 and _anio_valido(anio):
+            return f"{anio}-{mes:02d}"
+        
+    # MM/YY  (06/25 → 2025-06)
+    m = re.fullmatch(r"(\d{1,2})[/\-](\d{2})", fecha)
+    if m:
+        mes = int(m.group(1))
+        anio = int(m.group(2))
+
+        if anio <= 30:
+            anio = 2000 + anio
+        else:
+            anio = 1900 + anio
+
+        if 1 <= mes <= 12 and _anio_valido(anio):
+            return f"{anio}-{mes:02d}"
+    # YYYY/MM/DD
+    m = re.fullmatch(r"(\d{4})[/\-](\d{1,2})[/\-](\d{1,2})", fecha)
+    if m:
+        anio = int(m.group(1))
+        mes = int(m.group(2))
+
+        if 1 <= mes <= 12 and _anio_valido(anio):
+            return f"{anio}-{mes:02d}"
+    # YYYYMM
+    m = re.fullmatch(r"(\d{4})(\d{2})", fecha)
+    if m:
+        anio = int(m.group(1))
+        mes = int(m.group(2))
+
+        if 1 <= mes <= 12 and _anio_valido(anio):
+            return f"{anio}-{mes:02d}"    
+    
+    # MMYYYY
+    m = re.fullmatch(r"(\d{2})(\d{4})", fecha)
+    if m:
+        mes = int(m.group(1))
+        anio = int(m.group(2))
+
+        if 1 <= mes <= 12 and _anio_valido(anio):
+            return f"{anio}-{mes:02d}"
+        
+    # YYYY-MM-DD
+    m = re.fullmatch(r"(\d{4})\-(\d{1,2})\-(\d{1,2})", fecha)
+    if m:
+        anio = int(m.group(1))
+        mes = int(m.group(2))
+
+        if 1 <= mes <= 12 and _anio_valido(anio):
+            return f"{anio}-{mes:02d}"
     # DD de Mes YYYY
     m = re.fullmatch(
         r"\d{1,2}\s+de\s+([a-záéíóúüñ]+)\s+(\d{4})",
@@ -373,8 +435,7 @@ def meses_entre(inicio, fin):
 
     diff = (d2.year - d1.year) * 12 + (d2.month - d1.month)
     if d2 < d1:
-
-     return 0
+        return 0
 
     return max(diff, 0)
 

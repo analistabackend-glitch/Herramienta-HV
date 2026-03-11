@@ -415,6 +415,7 @@ def extraer_descripcion_vacante(driver, nombre_vacante, url_vacante_match, log, 
             "descripcion_tareas"       : descripcion,
             "peso_experiencia_laboral" : f"{cfg.get('peso_exp', '')} %" if cfg else "",
             "peso_formacion_academica" : f"{cfg.get('peso_aca', '')} %" if cfg else "",
+            "palabras_clave"           : cfg.get("palabras_clave", "") if cfg else "",
             "fecha_extraccion"         : datetime.now().strftime("%Y-%m-%d %H:%M"),
         }
         nombre_limpio = re.sub(r"[^\w\s-]", "", nombre_vacante).strip().replace(" ", "_")[:60]
@@ -430,8 +431,9 @@ def extraer_descripcion_vacante(driver, nombre_vacante, url_vacante_match, log, 
         return None
 
 
-def descargar_hv(driver, url_hv, nombre):
-    CARPETA_DESCARGA.mkdir(exist_ok=True)
+def descargar_hv(driver, url_hv, nombre, carpeta=None):
+    destino_dir = Path(carpeta) if carpeta else CARPETA_DESCARGA
+    destino_dir.mkdir(parents=True, exist_ok=True)
     session = requests.Session()
     for c in driver.get_cookies():
         session.cookies.set(c["name"], c["value"])
@@ -453,7 +455,7 @@ def descargar_hv(driver, url_hv, nombre):
         ext = ".docx"
     else:
         ext = ".pdf"
-    ruta = CARPETA_DESCARGA / f"{nombre}{ext}"
+    ruta = destino_dir / f"{nombre}{ext}"
     with open(ruta, "wb") as f:
         f.write(contenido)
     return ruta
@@ -463,10 +465,33 @@ def descargar_hv(driver, url_hv, nombre):
 #  PROCESO PRINCIPAL
 # ══════════════════════════════════════════
 
-def correr_proceso(cfg, log, progress, done):
+def correr_proceso(cfg, log, progress, done,
+                   barra1_done=None, progress_ia=None, barra2_done=None,
+                   progress_clas=None, barra3_done=None):
     try:
+        # ── Carpeta raíz de la ejecución (fecha + hora) ───────────────────
+        ts          = datetime.now().strftime("%d-%m-%y_%H-%M")
+        nombre_vac  = re.sub(r"[^\w\s-]", "", cfg["vacante"]).strip().replace(" ", "_")[:40]
+        sufijo      = f"{nombre_vac}_{ts}"
+        raiz        = Path("Ejecuciones") / sufijo
+
+        # Carpeta 1 — Archivos intermedios (para el desarrollador)
+        dir_intermedios  = raiz / f"Archivos intermedios - {sufijo}"
+        dir_primer       = dir_intermedios / f"Primer Filtro - {sufijo}"
+        dir_segundo      = dir_intermedios / f"Segundo Filtro - {sufijo}"
+        dir_tercero      = dir_intermedios / f"Tercer Filtro - {sufijo}"
+
+        # Carpeta 2 — Resultados (entregable final)
+        dir_resultados   = raiz / f"Resultados - {sufijo}"
+
+        for d in (dir_primer, dir_segundo, dir_tercero,
+                  dir_resultados / "Opcionados",
+                  dir_resultados / "Probablemente Opcionados",
+                  dir_resultados / "Descartados"):
+            d.mkdir(parents=True, exist_ok=True)
+
         import logging
-        log_path = Path("log_filtrador.txt")
+        log_path = dir_intermedios / "log_filtrador.txt"
         logging.basicConfig(
             filename=str(log_path),
             filemode="w",
@@ -479,27 +504,10 @@ def correr_proceso(cfg, log, progress, done):
             logging.info(msg)
             log_original(msg)
 
-        '''log("Conectando con Google Drive...")
-        drive = drive_autenticar()
-        vn    = f"{cfg['vacante']}_{datetime.now().strftime('%Y-%m')}"
-        # Usar ID directo de la carpeta raíz para evitar duplicados
-        vid = drive_folder(drive, vn, DRIVE_FOLDER_ID)
-        log(f"Carpeta lista en Drive: {DRIVE_ROOT_FOLDER}/{vn}/")***'''
+        log(f"Carpeta de ejecución: {raiz}")
 
-        log("Preparando carpeta local...") #***
-
-        vn = f"{cfg['vacante']}_{datetime.now().strftime('%Y-%m')}" #***
-        carpeta_vacante = CARPETA_DESCARGA / vn #***
-        carpeta_vacante.mkdir(parents=True, exist_ok=True) #***
-
-        # Limpiar archivos temporales sueltos en la raíz de CARPETA_DESCARGA
-        # (PDFs/DOCXs que quedaron de corridas anteriores interrumpidas)
-        for archivo_suelto in CARPETA_DESCARGA.glob("*"):
-            if archivo_suelto.is_file() and archivo_suelto.suffix.lower() in (".pdf", ".docx"):
-                archivo_suelto.unlink()
-                log(f"  Archivo temporal eliminado: {archivo_suelto.name}")
-
-        log(f"Carpeta creada: {carpeta_vacante}")
+        # carpeta_vacante = dir_primer (aquí van las HVs descargadas)
+        carpeta_vacante = dir_primer
 
         driver = crear_driver()
         if not login(driver, log): driver.quit(); done(False); return
@@ -534,7 +542,7 @@ def correr_proceso(cfg, log, progress, done):
                     resumen.append(datos); continue
 
                 nombre_f = re.sub(r"[^\w\s-]", "", nombre).strip().replace(" ", "_")
-                ruta = descargar_hv(driver, datos["url_pdf"], nombre_f)
+                ruta = descargar_hv(driver, datos["url_pdf"], nombre_f, carpeta=carpeta_vacante)
 
                 if not ruta:
                     log("  PDF no descargable — omitido")
@@ -542,19 +550,10 @@ def correr_proceso(cfg, log, progress, done):
                     sin_pdf += 1
                     resumen.append(datos); continue
 
-                '''drive_upload_hv(drive, ruta, vid)
-                ruta.unlink()
                 subidos += 1
                 datos["estado"] = "SUBIDO"
-                log(f"  SUBIDO a Drive")***'''
-
-                destino = carpeta_vacante / ruta.name #***
-                if destino.exists():
-                    destino.unlink()  # sobreescribir si ya existe de una corrida anterior
-                shutil.move(str(ruta), str(destino))  #***
-
-                subidos += 1#***
-                log(f"  Guardado localmente: {destino}")#***
+                datos["motivo"] = datos.get("motivo_seleccion", "")
+                log(f"  Guardado localmente: {ruta}")
 
                 resumen.append(datos)
                 time.sleep(1.5)
@@ -562,98 +561,74 @@ def correr_proceso(cfg, log, progress, done):
             except Exception as e:
                 log(f"  Error: {e}"); continue
 
-        # Extraer descripcion al final, sin interferir con el flujo principal
+        # Extraer descripcion de la vacante (se guarda en dir_primer)
         extraer_descripcion_vacante(driver, cfg["vacante"], cfg["url_vacante"], log, cfg, carpeta_vacante)
 
         driver.quit()
 
-        # ── Generar Excel resumen ──
-        log("\nGenerando Excel resumen...")
-        try:
-            filas = []
-            for d in resumen:
-                estado = d.get("estado", "")
-                motivo = d.get("motivo_seleccion", "") if estado == "SUBIDO" else d.get("motivo_rechazo", "")
-                filas.append({
-                    "Estado"          : estado,
-                    "Motivo"          : motivo,
-                    "Nombre"          : d.get("nombre", ""),
-                    "Edad"            : d.get("edad", ""),
-                    "Salario aspirado": d.get("salario", ""),
-                    "Sabados"         : d.get("sabados", ""),
-                    "URL perfil"      : d.get("url", ""),
-                })
-            df = pd.DataFrame(filas)
-            orden = {"SUBIDO": 0, "SIN PDF": 1, "PDF NO DESCARGABLE": 2, "RECHAZADO": 3}
-            df["_o"] = df["Estado"].map(orden).fillna(4)
-            df = df.sort_values("_o").drop(columns=["_o"])
-
-            # Hoja de parametros usados
-            df_params = pd.DataFrame([
-                {"Parámetro": "Vacante",                    "Valor": cfg["vacante"]},
-                {"Parámetro": "URL vacante",                "Valor": cfg["url_vacante"]},
-                {"Parámetro": "Edad mínima",                "Valor": cfg["edad_min"]},
-                {"Parámetro": "Edad máxima",                "Valor": cfg["edad_max"]},
-                {"Parámetro": "Salario mínimo ($)",         "Valor": f"${cfg['sal_min']:,}"},
-                {"Parámetro": "Salario máximo ($)",         "Valor": f"${cfg['sal_max']:,}"},
-                {"Parámetro": "Requiere sábados",           "Valor": "Sí" if cfg["requiere_sabados"] else "No"},
-                {"Parámetro": "Peso experiencia laboral",   "Valor": f"{cfg.get('peso_exp', '')} %"},
-                {"Parámetro": "Peso formación académica",   "Valor": f"{cfg.get('peso_aca', '')} %"},
-                {"Parámetro": "Fecha ejecución",            "Valor": datetime.now().strftime("%Y-%m-%d %H:%M")},
-            ])
-
-            CARPETA_DESCARGA.mkdir(exist_ok=True)
-            xp = CARPETA_DESCARGA / f"resumen_{cfg['vacante'].replace(' ','_')}.xlsx"
-            with pd.ExcelWriter(xp, engine="openpyxl") as writer:
-                df.to_excel(writer, index=False, sheet_name="Candidatos")
-                df_params.to_excel(writer, index=False, sheet_name="Parámetros")
-            '''drive_upload_excel(drive, xp, vid)
-            xp.unlink()
-            log("Excel subido a Drive")'''
-
-            excel_destino = carpeta_vacante / xp.name #***
-            if excel_destino.exists():
-                excel_destino.unlink()  # sobreescribir si ya existe
-            shutil.move(str(xp), str(excel_destino))  #***
-
-            log(f"Excel guardado localmente: {excel_destino}")#***
-
-        except Exception as e:
-            log(f"  Error generando Excel: {e}")
-
         log(f"\nListo.")
         log(f"   Total revisados  : {total}")
-        log(f"   Subidos a Drive  : {subidos}")
+        log(f"   Subidos          : {subidos}")
         log(f"   Rechazados       : {rechazados}")
         log(f"   Sin PDF          : {sin_pdf}")
-        '''log(f"\nDrive: {DRIVE_ROOT_FOLDER}/{vn}/")***'''
-        log(f"\nResultados guardados en: {carpeta_vacante}") #***
 
-        # ── Encadenar Segundo Filtro → Tercer Filtro ──────────────────
+        # ── Barra 1 completada ────────────────────────────────────────
+        if barra1_done:
+            barra1_done()
+
+        # ── Segundo Filtro ────────────────────────────────────────────
         log("\n" + "─" * 50)
         log("Iniciando SEGUNDO FILTRO (análisis IA de CVs)...")
         try:
-            # Ajustar carpeta INPUT de segundo_filtro al resultado del primer filtro
             import segundo_filtro as sf
-            sf.INPUT  = str(carpeta_vacante)
-            sf.OUTPUT = "Resultados Segundo Filtro"
+            sf.INPUT          = str(carpeta_vacante)
+            sf.OUTPUT         = str(dir_segundo)
+            sf.ARCHIVOS_NO_HV = []
+            _archivos_ia = [
+                f for f in os.listdir(str(carpeta_vacante))
+                if f.lower().endswith((".pdf", ".docx")) and not f.startswith("~$")
+            ]
+            _total_ia = len(_archivos_ia) or 1
+            sf._progress_ia_cb     = progress_ia
+            sf._total_ia_para_prog = _total_ia
             sf.main()
             log("Segundo filtro completado.")
         except Exception as e:
             import traceback
             log(f"  Error en segundo filtro: {e}\n{traceback.format_exc()}")
 
+        # ── Barra 2 completada ────────────────────────────────────────
+        if barra2_done:
+            barra2_done()
+
+        # ── Tercer Filtro ─────────────────────────────────────────────
         log("\n" + "─" * 50)
         log("Iniciando TERCER FILTRO (scoring y clasificación)...")
         try:
             import tercer_filtro as tf
-            # Inyectar carpeta exacta para que no confunda con vacantes anteriores
-            tf.CARPETA_VACANTE_ACTIVA = carpeta_vacante
+            tf.CARPETA_VACANTE_ACTIVA  = carpeta_vacante
+            tf.DIR_SEGUNDO_FILTRO      = dir_segundo
+            tf.DIR_TERCER_FILTRO       = dir_tercero
+            tf.DIR_RESULTADOS          = dir_resultados
+            tf.CFG_PRIMER_FILTRO       = cfg
+            tf.RESUMEN_PRIMER_FILTRO   = resumen
+            import segundo_filtro as sf2
+            tf.ARCHIVOS_NO_HV = getattr(sf2, "ARCHIVOS_NO_HV", [])
+            _archivos_clas = [
+                f for f in (os.listdir(str(dir_segundo)) if dir_segundo.exists() else [])
+                if f.endswith(".json")
+            ]
+            tf._progress_clas_cb     = progress_clas
+            tf._total_clas_para_prog = len(_archivos_clas) or 1
             tf.main()
             log("Tercer filtro completado.")
         except Exception as e:
             import traceback
             log(f"  Error en tercer filtro: {e}\n{traceback.format_exc()}")
+
+        # ── Barra 3 completada ────────────────────────────────────────
+        if barra3_done:
+            barra3_done()
 
         done(True)
 
@@ -683,7 +658,7 @@ class App:
     def __init__(self, root):
         self.root = root
         root.title("Filtrador de Hojas de Vida")
-        root.geometry("660x700")
+        root.geometry("680x620")
         root.resizable(False, False)
         root.configure(bg=COR_BG)
         self._build()
@@ -728,18 +703,31 @@ class App:
         tk.Label(badge, text="v1.0", font=("Segoe UI", 8, "bold"),
                  bg=COR_NARANJA, fg="white").pack()
 
-        # ── Cuerpo principal ────────────────────────────────────────────
-        body = tk.Frame(self.root, bg=COR_BG, padx=24, pady=18)
-        body.pack(fill="both", expand=True)
+        # ── Cuerpo principal con scroll ─────────────────────────────────
+        _outer = tk.Frame(self.root, bg=COR_BG)
+        _outer.pack(fill="both", expand=True)
 
-        # ── helpers de layout ──────────────────────────────────────────
-        def section_title(parent, texto):
-            """Título de sección con línea naranja lateral."""
-            row = tk.Frame(parent, bg=COR_BG)
-            row.pack(fill="x", pady=(14, 6))
-            tk.Frame(row, bg=COR_NARANJA, width=3).pack(side="left", fill="y", padx=(0, 8))
-            tk.Label(row, text=texto, font=("Segoe UI", 9, "bold"),
-                     bg=COR_BG, fg=COR_TEXTO).pack(side="left", anchor="w")
+        _canvas = tk.Canvas(_outer, bg=COR_BG, highlightthickness=0)
+        _canvas.pack(side="left", fill="both", expand=True)
+
+        _vsb = ttk.Scrollbar(_outer, orient="vertical", command=_canvas.yview)
+        _vsb.pack(side="right", fill="y")
+        _canvas.configure(yscrollcommand=_vsb.set)
+
+        body = tk.Frame(_canvas, bg=COR_BG, padx=24, pady=12)
+        _canvas_win = _canvas.create_window((0, 0), window=body, anchor="nw")
+
+        def _on_body_configure(e):
+            _canvas.configure(scrollregion=_canvas.bbox("all"))
+        def _on_canvas_configure(e):
+            _canvas.itemconfig(_canvas_win, width=e.width)
+        body.bind("<Configure>", _on_body_configure)
+        _canvas.bind("<Configure>", _on_canvas_configure)
+
+        # Scroll con rueda del ratón
+        def _on_mousewheel(e):
+            _canvas.yview_scroll(int(-1 * (e.delta / 120)), "units")
+        _canvas.bind_all("<MouseWheel>", _on_mousewheel)
 
         def campo(parent, lbl, default="", w=28, tooltip=None):
             row = tk.Frame(parent, bg=COR_BG)
@@ -813,7 +801,16 @@ class App:
             return v
 
         def divider(parent):
-            tk.Frame(parent, bg=COR_SEP, height=1).pack(fill="x", pady=(12, 0))
+            tk.Frame(parent, bg=COR_SEP, height=1).pack(fill="x", pady=(8, 0))
+
+        # ── helpers de layout ──────────────────────────────────────────
+        def section_title(parent, texto):
+            """Título de sección con línea naranja lateral."""
+            row = tk.Frame(parent, bg=COR_BG)
+            row.pack(fill="x", pady=(8, 4))
+            tk.Frame(row, bg=COR_NARANJA, width=3).pack(side="left", fill="y", padx=(0, 8))
+            tk.Label(row, text=texto, font=("Segoe UI", 9, "bold"),
+                     bg=COR_BG, fg=COR_TEXTO).pack(side="left", anchor="w")
 
         # ── Sección: Vacante ────────────────────────────────────────────
         section_title(body, "INFORMACIÓN DE LA VACANTE")
@@ -874,11 +871,33 @@ class App:
                  bg=COR_BG, fg=COR_SUBTEXTO, font=("Segoe UI", 8, "italic"),
                  wraplength=600, justify="left").pack(anchor="w", pady=(4, 0))
 
+        # ── Sección: Palabras clave de contexto ─────────────────────────
+        divider(body)
+        section_title(body, "PALABRAS CLAVE DE CONTEXTO  (opcional)")
+
+        row_kw = tk.Frame(body, bg=COR_BG)
+        row_kw.pack(fill="x", pady=(2, 0))
+        tk.Label(row_kw, text="Palabras clave:", bg=COR_BG,
+                 font=("Segoe UI", 9), fg=COR_TEXTO,
+                 width=16, anchor="w").pack(side="left")
+        self.v_keywords = tk.StringVar()
+        tk.Entry(row_kw, textvariable=self.v_keywords, width=52,
+                 font=("Segoe UI", 9),
+                 relief="solid", bd=1,
+                 highlightthickness=1,
+                 highlightbackground=COR_BORDE,
+                 highlightcolor=COR_NARANJA).pack(side="left", ipady=3)
+
+        tk.Label(body,
+                 text="Separadas por coma (,)  —  Ej: logística, operaciones, supply chain, almacén  ·  Generan bonus en el score.",
+                 bg=COR_BG, fg=COR_SUBTEXTO, font=("Segoe UI", 8, "italic"),
+                 wraplength=600, justify="left").pack(anchor="w", pady=(2, 0))
+
         # ── Barra de acción ─────────────────────────────────────────────
         divider(body)
 
         action_row = tk.Frame(body, bg=COR_BG)
-        action_row.pack(fill="x", pady=(14, 6))
+        action_row.pack(fill="x", pady=(10, 4))
 
         self.btn = tk.Button(action_row,
                              text="  ▶  Iniciar filtrado de HVs",
@@ -892,23 +911,73 @@ class App:
                              command=self.iniciar)
         self.btn.pack(side="left")
 
-        self.lbl_prog = tk.Label(action_row, text="Esperando...",
-                                 bg=COR_BG, font=("Segoe UI", 9),
-                                 fg=COR_SUBTEXTO)
-        self.lbl_prog.pack(side="left", padx=16)
-
-        # ── Barra de progreso ───────────────────────────────────────────
+        # ── Barras de progreso ──────────────────────────────────────────
         style = ttk.Style()
         style.theme_use("default")
         style.configure("Corp.Horizontal.TProgressbar",
                          troughcolor=COR_SEP,
                          background=COR_NARANJA,
-                         thickness=6)
+                         thickness=8)
 
-        self.pv = tk.DoubleVar()
-        ttk.Progressbar(body, variable=self.pv, maximum=100,
-                        length=610, style="Corp.Horizontal.TProgressbar"
-                        ).pack(pady=(4, 0))
+        barras_frame = tk.Frame(body, bg=COR_BG)
+        barras_frame.pack(fill="x", pady=(8, 0))
+
+        # — Barra 1: Descargando hojas de vida —
+        fila1 = tk.Frame(barras_frame, bg=COR_BG)
+        fila1.pack(fill="x", pady=(0, 2))
+        self.lbl_barra1 = tk.Label(fila1, text="Descargando hojas de vida",
+                                   bg=COR_BG, font=("Segoe UI", 9, "bold"),
+                                   fg=COR_TEXTO, width=26, anchor="w")
+        self.lbl_barra1.pack(side="left")
+        self.lbl_cnt1 = tk.Label(fila1, text="",
+                                 bg=COR_BG, font=("Segoe UI", 8), fg=COR_SUBTEXTO,
+                                 width=10, anchor="w")
+        self.lbl_cnt1.pack(side="left", padx=(4, 6))
+        self.pv1 = tk.DoubleVar()
+        self.pb1 = ttk.Progressbar(fila1, variable=self.pv1, maximum=100,
+                                   length=320, style="Corp.Horizontal.TProgressbar")
+        self.pb1.pack(side="left")
+        self.lbl_check1 = tk.Label(fila1, text="", bg=COR_BG,
+                                   font=("Segoe UI", 12), fg="#27AE60", width=3)
+        self.lbl_check1.pack(side="left", padx=(6, 0))
+
+        # — Barra 2: Revisando hojas de vida —
+        fila2 = tk.Frame(barras_frame, bg=COR_BG)
+        fila2.pack(fill="x", pady=(6, 2))
+        self.lbl_barra2 = tk.Label(fila2, text="Revisando hojas de vida",
+                                   bg=COR_BG, font=("Segoe UI", 9, "bold"),
+                                   fg=COR_TEXTO, width=26, anchor="w")
+        self.lbl_barra2.pack(side="left")
+        self.lbl_cnt2 = tk.Label(fila2, text="",
+                                 bg=COR_BG, font=("Segoe UI", 8), fg=COR_SUBTEXTO,
+                                 width=10, anchor="w")
+        self.lbl_cnt2.pack(side="left", padx=(4, 6))
+        self.pv2 = tk.DoubleVar()
+        self.pb2 = ttk.Progressbar(fila2, variable=self.pv2, maximum=100,
+                                   length=320, style="Corp.Horizontal.TProgressbar")
+        self.pb2.pack(side="left")
+        self.lbl_check2 = tk.Label(fila2, text="", bg=COR_BG,
+                                   font=("Segoe UI", 12), fg="#27AE60", width=3)
+        self.lbl_check2.pack(side="left", padx=(6, 0))
+
+        # — Barra 3: Clasificando hojas de vida —
+        fila3 = tk.Frame(barras_frame, bg=COR_BG)
+        fila3.pack(fill="x", pady=(6, 4))
+        self.lbl_barra3 = tk.Label(fila3, text="Clasificando hojas de vida",
+                                   bg=COR_BG, font=("Segoe UI", 9, "bold"),
+                                   fg=COR_TEXTO, width=26, anchor="w")
+        self.lbl_barra3.pack(side="left")
+        self.lbl_cnt3 = tk.Label(fila3, text="",
+                                 bg=COR_BG, font=("Segoe UI", 8), fg=COR_SUBTEXTO,
+                                 width=10, anchor="w")
+        self.lbl_cnt3.pack(side="left", padx=(4, 6))
+        self.pv3 = tk.DoubleVar()
+        self.pb3 = ttk.Progressbar(fila3, variable=self.pv3, maximum=100,
+                                   length=320, style="Corp.Horizontal.TProgressbar")
+        self.pb3.pack(side="left")
+        self.lbl_check3 = tk.Label(fila3, text="", bg=COR_BG,
+                                   font=("Segoe UI", 12), fg="#27AE60", width=3)
+        self.lbl_check3.pack(side="left", padx=(6, 0))
 
         # ── Footer ──────────────────────────────────────────────────────
         footer = tk.Frame(self.root, bg=COR_NARANJA, height=4)
@@ -922,20 +991,54 @@ class App:
         pass
 
     def actualizar_progreso(self, actual, total):
+        """Barra 1 — Descargando hojas de vida."""
         pct = (actual / total) * 100
-        self.pv.set(pct)
-        self.lbl_prog.config(text=f"Candidato {actual} de {total}  ({pct:.0f} %)")
+        self.pv1.set(pct)
+        self.lbl_cnt1.config(text=f"{actual} de {total}")
+        self.root.update_idletasks()
+
+    def barra1_terminada(self):
+        """Marca la barra 1 como completada con chulito."""
+        self.pv1.set(100)
+        self.lbl_check1.config(text="✅")
+        self.lbl_cnt1.config(text="Finalizado")
+        self.root.update_idletasks()
+
+    def actualizar_progreso_ia(self, actual, total):
+        """Barra 2 — Revisando hojas de vida con IA."""
+        pct = (actual / total) * 100
+        self.pv2.set(pct)
+        self.lbl_cnt2.config(text=f"{actual} de {total}")
+        self.root.update_idletasks()
+
+    def barra2_terminada(self):
+        """Marca la barra 2 como completada con chulito."""
+        self.pv2.set(100)
+        self.lbl_check2.config(text="✅")
+        self.lbl_cnt2.config(text="Finalizado")
+        self.root.update_idletasks()
+
+    def actualizar_progreso_clasificacion(self, actual, total):
+        """Barra 3 — Clasificando hojas de vida."""
+        pct = (actual / total) * 100
+        self.pv3.set(pct)
+        self.lbl_cnt3.config(text=f"{actual} de {total}")
+        self.root.update_idletasks()
+
+    def barra3_terminada(self):
+        """Marca la barra 3 como completada con chulito."""
+        self.pv3.set(100)
+        self.lbl_check3.config(text="✅")
+        self.lbl_cnt3.config(text="Finalizado")
         self.root.update_idletasks()
 
     def proceso_terminado(self, ok):
         self.btn.config(state="normal", text="  ▶  Iniciar filtrado de HVs")
         if ok:
-            self.lbl_prog.config(text="✔  Proceso completado")
             messagebox.showinfo("Proceso completado",
                                 "El filtrado finalizó correctamente.\n"
                                 "Revisa la carpeta de resultados.")
         else:
-            self.lbl_prog.config(text="✘  Terminó con errores")
             messagebox.showerror("Error en el proceso",
                                  "El proceso terminó con errores.\n"
                                  "Revisa el archivo log_filtrador.txt.")
@@ -972,17 +1075,28 @@ class App:
                 "requiere_sabados" : self.v_sab.get(),
                 "peso_exp"         : peso_exp,
                 "peso_aca"         : peso_aca,
+                "palabras_clave"   : self.v_keywords.get().strip(),
             }
         except ValueError:
             messagebox.showerror("Error", "Verifica que edad y salario sean números válidos.")
             return
 
         self.btn.config(state="disabled", text="  ⏳  Procesando...")
-        self.pv.set(0)
-        self.lbl_prog.config(text="Iniciando proceso...")
+        self.pv1.set(0)
+        self.pv2.set(0)
+        self.pv3.set(0)
+        self.lbl_check1.config(text="")
+        self.lbl_check2.config(text="")
+        self.lbl_check3.config(text="")
+        self.lbl_cnt1.config(text="")
+        self.lbl_cnt2.config(text="")
+        self.lbl_cnt3.config(text="")
 
         threading.Thread(target=correr_proceso,
-                         args=(cfg, self.log, self.actualizar_progreso, self.proceso_terminado),
+                         args=(cfg, self.log, self.actualizar_progreso,
+                               self.proceso_terminado, self.barra1_terminada,
+                               self.actualizar_progreso_ia, self.barra2_terminada,
+                               self.actualizar_progreso_clasificacion, self.barra3_terminada),
                          daemon=True).start()
 
 
