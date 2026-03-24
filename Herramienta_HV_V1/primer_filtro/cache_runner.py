@@ -80,6 +80,7 @@ def detectar_modo_cache() -> tuple:
 # ── Proceso principal desde caché ─────────────────────────────────────────────
 
 def correr_proceso_desde_cache(config_filtros, ui):
+    
     """
     Ejecuta SOLO el Tercer Filtro reutilizando los datos de la última ejecución.
     Se usa cuando el usuario solo cambia pesos o palabras clave.
@@ -89,6 +90,9 @@ def correr_proceso_desde_cache(config_filtros, ui):
     - Lee PDFs desde la carpeta Primer Filtro de la ejecución en caché.
     - No abre Chrome.
     """
+    from token_tracker import reset
+    reset()
+
     from gestor_cache import obtener_ruta_ejecucion, guardar_ruta_ejecucion, guardar_config
     from config import CACHE_JSON_CV
     from main import (
@@ -195,7 +199,7 @@ def correr_proceso_desde_cache(config_filtros, ui):
 
         carpeta_sf_limpia = intermedios_nuevos / "Segundo Filtro"
         vistos = {}
-        for j in sorted(Path(carpeta_jsons_sf).glob("*.json"), key=lambda p: p.stat().st_mtime, reverse=True):
+        for j in sorted(Path(carpeta_jsons_sf).glob("*.pdf.json"), key=lambda p: p.stat().st_mtime, reverse=True):
             clave = _norm_nombre(j.stem)
             if clave not in vistos:
                 vistos[clave] = j
@@ -259,17 +263,27 @@ def correr_proceso_desde_cache(config_filtros, ui):
     n_pdfs = 0
     for ext in ("*.pdf", "*.docx"):
         for f in Path(carpeta_pdfs).glob(ext):
-            shutil.copy2(f, carpeta_pf / f.name)
+            destino = carpeta_pf / f.name
+
+            # ✅ MISMA VALIDACIÓN
+            if f.resolve() != destino.resolve():
+                shutil.copy2(f, destino)
+
             n_pdfs += 1
     log(f"  Primer Filtro: {n_pdfs} archivos copiados para trazabilidad")
 
     # ── Copiar JSONs del segundo filtro a Segundo Filtro/ (trazabilidad) ──────
     carpeta_sf_dest = intermedios_nuevos / "Segundo Filtro"
     n_jsons = 0
+
     for f in Path(carpeta_jsons_sf).glob("*.json"):
-        shutil.copy2(f, carpeta_sf_dest / f.name)
+        destino = carpeta_sf_dest / f.name
+
+        # ✅ AQUÍ VA LA SOLUCIÓN
+        if f.resolve() != destino.resolve():
+            shutil.copy2(f, destino)
+
         n_jsons += 1
-    log(f"  Segundo Filtro: {n_jsons} JSONs copiados para trazabilidad")
 
     # Actualizar carpetas_tf para que tercer filtro lea desde las copias locales
     carpetas_tf["primer_filtro"]  = carpeta_pf
@@ -343,6 +357,10 @@ def correr_proceso_desde_cache(config_filtros, ui):
         log("\n" + "█" * 60)
         log("RE-EVALUACIÓN COMPLETADA")
         log("█" * 60)
+
+        # ✅ AGREGAR ESTO:
+        from token_tracker import reporte
+        reporte(log=log)
 
         # ── Subida a Google Drive ─────────────────────────────────────────
         try:

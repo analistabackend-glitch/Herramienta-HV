@@ -37,12 +37,20 @@ def calcular_costo():
     }
 
 
-def reporte():
+def reporte(log=None):
     data = calcular_costo()
 
-    print("\n💰 COSTO IA")
-    print(f"Tokens input : {data['input_tokens']}")
-    print(f"Tokens output: {data['output_tokens']}")
-    print(f"Costo input  : ${data['costo_input_usd']:.6f}")
-    print(f"Costo output : ${data['costo_output_usd']:.6f}")
-    print(f"TOTAL USD    : ${data['costo_total_usd']:.6f}")
+    lineas = [
+        "\n💰 COSTO IA",
+        f"   Tokens input : {data['input_tokens']}",
+        f"   Tokens output: {data['output_tokens']}",
+        f"   Costo input  : ${data['costo_input_usd']:.6f}",
+        f"   Costo output : ${data['costo_output_usd']:.6f}",
+        f"   TOTAL USD    : ${data['costo_total_usd']:.6f}",
+    ]
+
+    for linea in lineas:
+        if log:
+            log(linea)
+        else:
+            print(linea)

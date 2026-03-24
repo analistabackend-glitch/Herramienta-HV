@@ -21,13 +21,17 @@ Estructura de carpetas generada por ejecución:
         └── 📄 Resumen Resultados <vacante>.xsl
 """
 
+from concurrent.futures import thread
+import json
 import os
 import re
 import threading
 from datetime import datetime
 from pathlib import Path
 import sys
-
+from pathlib import Path
+import json
+from tkinter import messagebox
 import config as _cfg  # importar módulo para poder mutar CARPETA_DESCARGA
 from config import EJECUCIONES, CACHE_DIR, CACHE_PDF, CACHE_JSON_CV, LOG_FILE
 from selenium_handler import (
@@ -42,7 +46,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent / "Segundo Filtro"))
 from token_tracker import reporte, reset
 
-reset()
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  ESTRUCTURA DE CARPETAS
@@ -102,21 +106,36 @@ def crear_estructura_ejecucion(nombre_vacante):
 # ══════════════════════════════════════════════════════════════════════════════
 #  LOGGER
 # ══════════════════════════════════════════════════════════════════════════════
-
-
-
 class Tee:
     def __init__(self, archivo, consola):
         self.archivo = archivo
         self.consola = consola
 
     def write(self, mensaje):
-        self.consola.write(mensaje)
-        self.archivo.write(mensaje)
+        try:
+            self.consola.write(mensaje)
+            self.consola.flush()
+        except Exception:
+            pass
+        try:
+            self.archivo.write(mensaje)
+            self.archivo.flush()
+        except Exception:
+            pass
 
     def flush(self):
-        self.consola.flush()
-        self.archivo.flush()
+        try:
+            self.consola.flush()
+        except Exception:
+            pass
+        try:
+            self.archivo.flush()
+        except Exception:
+            pass
+
+    # ✅ Necesario para que librerías que usan isatty() no fallen
+    def isatty(self):
+        return False
 
 
 def crear_logger(ruta_log: Path):
@@ -127,14 +146,29 @@ def crear_logger(ruta_log: Path):
     except FileNotFoundError:
         pass
 
-    log_file = open(ruta_log, "a", encoding="utf-8")
+    log_file = open(ruta_log, "a", encoding="utf-8", buffering=1)
 
-    # 🔥 CLAVE: redirige TODO lo que sale en consola
-    sys.stdout = Tee(log_file, sys.__stdout__)
-    sys.stderr = Tee(log_file, sys.__stderr__)
+    tee_out = Tee(log_file, sys.__stdout__)
+    tee_err = Tee(log_file, sys.__stderr__)
+
+    sys.stdout = tee_out
+    sys.stderr = tee_err
+
+    # ✅ Capturar logging de librerías PERO silenciar las muy ruidosas
+    import logging
+    file_handler = logging.StreamHandler(log_file)
+    file_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s"))
+
+    # Solo WARNING o superior para librerías externas ruidosas
+    for lib in ("httpcore", "httpx", "openai", "urllib3", "googleapiclient",
+                "google_auth_httplib2", "google.auth", "selenium", "webdriver_manager"):
+        logging.getLogger(lib).setLevel(logging.WARNING)
+
+    # El root logger solo captura WARNING+ por defecto
+    logging.root.setLevel(logging.WARNING)
+    logging.root.addHandler(file_handler)
 
     def log(mensaje):
-        from datetime import datetime
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         print(f"[{timestamp}] {mensaje}")
 
@@ -394,6 +428,8 @@ def correr_tercer_filtro(carpetas, config_filtros, aprobados_f1, rechazados_f1, 
 # ══════════════════════════════════════════════════════════════════════════════
 
 def correr_proceso(config_filtros, ui):
+    from token_tracker import reset
+    reset()  # ✅ IMPORTANTE: reinicia tokens en cada ejecución
     """Ejecuta el proceso completo de filtrado."""
 
     # 1. Crear estructura de carpetas para esta ejecución
@@ -457,20 +493,64 @@ def correr_proceso(config_filtros, ui):
             except Exception as e:
                 log(f"  [WARN] No se pudo limpiar caché json_cv: {e}")
 
-            # 4a. Extraer descripción de la vacante (guarda JSON para el tercer filtro)
             log("\nExtrayendo descripción de la vacante...")
+
+            #AQUI
+
+            log("\nExtrayendo descripción de la vacante...")
+
             try:
                 from selenium_handler import extraer_descripcion_vacante
+
                 extraer_descripcion_vacante(
                     driver,
                     config_filtros["vacante"],
                     config_filtros["url_vacante"],
                     log,
                     cfg=config_filtros,
-                    carpeta_destino=carpetas["intermedios"],  # dentro de Archivos intermedios/
+                    carpeta_destino=carpetas["intermedios"],
                 )
+
+                # 🔥 Buscar archivo generado
+                desc_files = list(Path(carpetas["intermedios"]).glob("descripcion_*.json"))
+
+                if not desc_files:
+                    log("❌ No se generó descripción de la vacante.")
+                    ui.proceso_terminado(False)
+                    return
+
+                ruta_desc = desc_files[0]
+
+                with open(ruta_desc, encoding="utf-8") as f:
+                    desc = json.load(f)
+
+                texto = desc.get("descripcion_tareas", "").lower().strip()
+
+                errores = [
+                    "límite permitido",
+                    "desactivar una oferta",
+                    "computrabajo essential",
+                    "no disponible",
+                ]
+
+                if len(texto) < 50 or any(e in texto for e in errores):
+                    log("❌ La descripción de la vacante no es válida.")
+                    log("   La oferta puede estar cerrada o no accesible.")
+
+                    # 🔥 POPUP PARA EL USUARIO
+                    ui.root.after(0, lambda: messagebox.showerror(
+                        "Vacante inválida",
+                        "No se pudo obtener una descripción válida.\n\n"
+                        "Verifique que la oferta esté activa en Computrabajo."
+                    ))
+
+                    ui.proceso_terminado(False)
+                    return
+
             except Exception as e:
-                log(f"  [WARN] No se pudo extraer descripción de vacante: {e}")
+                log(f"❌ Error extrayendo descripción: {e}")
+                ui.proceso_terminado(False)
+                return
 
             # 4b. Extraer URLs de candidatos
             log("\nExtrayendo URLs de candidatos...")
@@ -482,12 +562,17 @@ def correr_proceso(config_filtros, ui):
                 return
 
             # 5. Scraping + filtrado + descarga de HVs
-            log(f"\nProcesando {len(urls)} candidatos...")
             aprobados, rechazados = procesar_candidatos(
                 driver, urls, config_filtros, carpetas, log,
                 ui.actualizar_progreso
             )
+
             ui.barra1_terminada()
+
+            # ✅ cerrar aquí
+            driver.quit()
+            driver = None
+            log("  🔒 Navegador cerrado.")
 
             # 5b. Segundo filtro (IA)
             log("\n" + "=" * 60)
@@ -526,9 +611,20 @@ def correr_proceso(config_filtros, ui):
             guardar_ruta_ejecucion(carpetas)
             from cache_runner import guardar_resumen_f1; guardar_resumen_f1(aprobados, rechazados)
 
+            from token_tracker import calcular_costo
+
             log("\n" + "█" * 60)
             log("PROCESO COMPLETADO EXITOSAMENTE")
-            reporte()
+            log("█" * 60)
+
+            costo = calcular_costo()
+
+            log(f"\n💰 COSTO IA")
+            log(f"   Tokens input : {costo['input_tokens']}")
+            log(f"   Tokens output: {costo['output_tokens']}")
+            log(f"   Costo input  : ${costo['costo_input_usd']:.6f}")
+            log(f"   Costo output : ${costo['costo_output_usd']:.6f}")
+            log(f"   TOTAL USD    : ${costo['costo_total_usd']:.6f}")
             log("█" * 60)
 
             # ── Subida a Google Drive ─────────────────────────────────────
@@ -553,6 +649,19 @@ def correr_proceso(config_filtros, ui):
                 log(f"📁 Resultados locales en: {carpetas['resultados']}")
                 ui.barra4_terminada(ok=False)
 
+            # ── Persistir descripcion_*.json en caché global ─────────────
+            # Debe hacerse ANTES de borrar la carpeta TEMP, para que
+            # la re-ejecución con caché pueda encontrarla
+            try:
+                import shutil as _shutil
+                from config import CACHE_JSON_VACANTE
+                for desc_json in carpetas["intermedios"].glob("descripcion_*.json"):
+                    CACHE_JSON_VACANTE.mkdir(parents=True, exist_ok=True)
+                    _shutil.copy2(desc_json, CACHE_JSON_VACANTE / desc_json.name)
+                    log(f"  💾 Descripción guardada en caché: {desc_json.name}")
+            except Exception as e:
+                log(f"  [WARN] No se pudo guardar descripción en caché: {e}")
+
             # ── Limpiar carpeta TEMP ──────────────────────────────────────
             try:
                 import shutil as _shutil
@@ -564,7 +673,8 @@ def correr_proceso(config_filtros, ui):
             ui.proceso_terminado(True)
 
         finally:
-            driver.quit()
+            if driver is not None:
+                driver.quit()
 
     except Exception as e:
         import traceback
@@ -575,6 +685,7 @@ def correr_proceso(config_filtros, ui):
 
 
 def iniciar_proceso_thread(config_filtros, ui):
+    print("🚀 INICIANDO THREAD")
     """
     Inicia el proceso en un thread separado.
     Decide automáticamente qué flujo ejecutar:
@@ -590,8 +701,9 @@ def iniciar_proceso_thread(config_filtros, ui):
         target = correr_proceso
 
     thread = threading.Thread(
-        target=target,
-        args=(config_filtros, ui),
-        daemon=True
+    target=target,
+    args=(config_filtros, ui)
     )
+
+    thread.daemon = False
     thread.start()

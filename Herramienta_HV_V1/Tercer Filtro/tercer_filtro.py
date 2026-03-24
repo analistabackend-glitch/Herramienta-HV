@@ -44,9 +44,7 @@ from token_tracker import registrar
 # ─────────────────────────────────────────
 
 load_dotenv()
-import os
-
-api_key = os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key="" + os.getenv("OPENAI_API_KEY"))
 MODEL = "gpt-4o-mini"
 
 # Carpetas de entrada

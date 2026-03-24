@@ -445,8 +445,25 @@ def extraer_descripcion_vacante(driver, nombre_vacante, url_vacante_match, log, 
             return None
         oi = m.group(1)
         url_pub = f"https://empresa.co.computrabajo.com/Company/Offers/Publish?oi={oi}"
-        driver.get(url_pub)
+        # 🔥 CARGA ROBUSTA CON REINTENTOS
+        for intento in range(3):
+            try:
+                driver.get(url_pub)
 
+                WebDriverWait(driver, 15).until(
+                    lambda d: len(d.find_element(By.TAG_NAME, "body").text) > 200
+                )
+                break
+            except Exception:
+                log(f"  [WARN] Reintentando carga de descripción ({intento+1}/3)...")
+                time.sleep(2)
+        # 👇 🔥 AQUÍ VA EL DEBUG (FUERA DEL FOR)
+        try:
+            body_len = len(driver.find_element(By.TAG_NAME, "body").text)
+            print("DEBUG BODY LENGTH:", body_len)
+        except Exception:
+            print("DEBUG BODY ERROR")
+            
         # ❌ ANTES: time.sleep(4)
         # ✅ AHORA: espera a que aparezca un textarea o contenteditable
         wait = WebDriverWait(driver, 15)
@@ -487,6 +504,15 @@ def extraer_descripcion_vacante(driver, nombre_vacante, url_vacante_match, log, 
                         break
                 except Exception:
                     driver.switch_to.default_content()
+
+        if not descripcion:
+            try:
+                body_text = driver.find_element(By.TAG_NAME, "body").text
+                if len(body_text) > 200:
+                    descripcion = body_text
+                    log("  [INFO] Descripción tomada del body completo")
+            except Exception:
+                pass
 
         if not descripcion:
             log("  [WARN] No se encontro la descripcion de tareas.")

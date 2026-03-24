@@ -8,6 +8,16 @@ Diseño basado en la identidad visual de Fertrac.
 import tkinter as tk
 from tkinter import ttk, messagebox
 from PIL import Image, ImageTk
+import sys
+import os
+
+def ruta_archivo(rel_path):
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, rel_path)
+    # Usar la carpeta donde está ui.py, no el cwd
+    # Esto garantiza que funcione sin importar desde dónde se ejecute
+    base = os.path.dirname(os.path.abspath(__file__))
+    return os.path.join(base, rel_path)
 # ── Paleta de colores Fertrac ──────────────────────────────────────────────────
 COLOR_NARANJA        = "#F5A623"   # botones, acentos
 COLOR_NARANJA_HOVER  = "#E8960F"
@@ -242,7 +252,8 @@ class AppUI:
         # 🔥 LOGO REAL (reemplaza el canvas)
         from PIL import Image, ImageTk
 
-        image = Image.open("logo.png")
+        ruta_logo = ruta_archivo("logo.png")
+        image = Image.open(ruta_logo)
 
         # Ajusta tamaño (clave para que se vea bien horizontal)
         image = image.resize((140, 48), Image.LANCZOS)
@@ -759,8 +770,8 @@ class AppUI:
                         from cache_runner import detectar_modo_cache
                         modo_cache, _ = detectar_modo_cache()
                         textos = {
-                            "f3": "⚡  Re-evaluar con caché (solo Filtro 3)",
-                            "f2": "⚡  Continuar desde Filtro 2 (PDFs en caché)",
+                            "f3": "⚡  Re-evaluar con caché", #(solo Filtro 3)
+                            "f2": "⚡  Re-evaluar con caché", #Filtro 2 (PDFs en caché)"
                         }
                         texto_btn = textos.get(modo_cache, "⚡  Re-evaluar con caché")
                     except Exception:
@@ -814,16 +825,20 @@ class AppUI:
 
         try:
             cfg = {
-                "vacante":          vacante,
-                "url_vacante":      url,
-                "edad_min":         int(self.v_emin.get()),
-                "edad_max":         int(self.v_emax.get()),
-                "sal_min":          self.obtener_salario_int(self.v_smin),
-                "sal_max":          self.obtener_salario_int(self.v_smax),
-                "requiere_sabados": self.v_sab.get(),
-                "peso_exp":         peso_exp,
-                "peso_aca":         peso_aca,
-                "palabras_clave":   self.v_keywords.get().strip(),
+                "vacante":       vacante,
+                "url_vacante":   url,
+
+                "edad_min":      int(self.v_emin.get()),
+                "edad_max":      int(self.v_emax.get()),
+
+                "sal_min":       self.obtener_salario_int(self.v_smin),
+                "sal_max":       self.obtener_salario_int(self.v_smax),
+
+                # 🔥 NOMBRES CORRECTOS
+                "sabados":             self.v_sab.get(),
+                "peso_experiencia":    peso_exp,
+                "peso_academico":      peso_aca,
+                "keywords":            self.v_keywords.get().strip(),
             }
         except ValueError:
             messagebox.showerror("Error", "Verifica que edad y salario sean números válidos.")
@@ -844,12 +859,18 @@ class AppUI:
             pass
 
         cfg["_usar_cache"] = self.usar_cache_filtros
-        self.callback_iniciar(cfg, self)
 
+        print("🔥 BOTÓN PRESIONADO")
+        print("CFG ENVIADO:", cfg)
+
+        self.callback_iniciar(cfg, self)
 
 # ── Entry point de prueba ──────────────────────────────────────────────────────
 
 if __name__ == "__main__":
+    from main import iniciar_proceso_thread  # 🔥 flujo real
+
+    # --- Callback de prueba (NO BORRAR) ---
     def dummy_callback(cfg, ui):
         import threading, time
 
@@ -859,18 +880,27 @@ if __name__ == "__main__":
                 time.sleep(0.05)
                 ui.actualizar_progreso(i, total)
             ui.barra1_terminada()
+
             for i in range(1, total + 1):
                 time.sleep(0.05)
                 ui.actualizar_progreso_ia(i, total)
             ui.barra2_terminada()
+
             for i in range(1, total + 1):
                 time.sleep(0.05)
                 ui.actualizar_progreso_clasificacion(i, total)
             ui.barra3_terminada()
+
             root.after(100, lambda: ui.proceso_terminado(True))
 
         threading.Thread(target=run, daemon=True).start()
 
     root = tk.Tk()
-    app = AppUI(root, dummy_callback)
+
+    # 🔥 USO REAL (PRODUCCIÓN)
+    app = AppUI(root, iniciar_proceso_thread)
+
+    # 👇 OPCIONAL: para pruebas visuales (solo si quieres)
+    # app = AppUI(root, dummy_callback)
+
     root.mainloop()

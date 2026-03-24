@@ -211,7 +211,7 @@ def subir_resultados_usuario(
 
 
 def subir_intermedios_dev(
-    carpeta_intermedios: Path, nombre_ejecucion: str, log=None
+    carpetas: dict, nombre_ejecucion: str, log=None
 ) -> Optional[str]:
 
     if log:
@@ -219,19 +219,23 @@ def subir_intermedios_dev(
 
     try:
         srv = _servicio_dev()
-
-        # ✅ USAR DIRECTAMENTE EL ID DE LA CARPETA (NO driveId)
         raiz_id = "17BHSo50UrYb1lUy5UlbiRnIJyohXRG9G"
 
-        # Crear carpeta de ejecución dentro de esa carpeta
-        ej_id = _buscar_o_crear_carpeta(
-            srv,
-            nombre_ejecucion,
-            padre_id=raiz_id
-        )
+        # Carpeta de ejecución en el DEV
+        ej_id = _buscar_o_crear_carpeta(srv, nombre_ejecucion, padre_id=raiz_id)
 
-        # Subir archivos
-        _subir_recursivo(srv, carpeta_intermedios, ej_id, log)
+        # ✅ Subir solo Archivos intermedios (JSONs, PDFs, log)
+        carpeta_intermedios = Path(carpetas["intermedios"])
+        if carpeta_intermedios.exists():
+            inter_id = _buscar_o_crear_carpeta(srv, carpeta_intermedios.name, ej_id)
+            _subir_recursivo(srv, carpeta_intermedios, inter_id, log)
+
+        # ✅ Subir el Excel de resultados (solo el archivo, no toda la carpeta)
+        carpeta_resultados = Path(carpetas["resultados"])
+        for xlsx in carpeta_resultados.glob("*.xlsx"):
+            _subir_archivo(srv, xlsx, ej_id)
+            if log:
+                log(f"    ✓ {xlsx.name}")
 
         if log:
             log(f"  ✅ Intermedios en Drive DEV (id: {ej_id})")
@@ -244,21 +248,7 @@ def subir_intermedios_dev(
         return None
     
 def subir_todo(carpetas: dict, nombre_ejecucion: str, log=None) -> dict:
-    """
-    Punto de entrada llamado desde main.py al final del proceso.
-
-    Parámetros:
-        carpetas:         dict con claves 'resultados' e 'intermedios' (Path)
-        nombre_ejecucion: "<vacante>_<dd-mm-aa>_<hh-mm>"
-
-    Retorna:
-        {
-            "link_usuario": "https://drive.google.com/drive/folders/...",
-            "folder_dev":   "<folder_id>",
-            "ok_usuario":   True/False,
-            "ok_dev":       True/False,
-        }
-    """
+    """..."""
     if log:
         log("\n" + "═" * 60)
         log("SUBIDA A GOOGLE DRIVE")
@@ -268,7 +258,7 @@ def subir_todo(carpetas: dict, nombre_ejecucion: str, log=None) -> dict:
         carpetas["resultados"], nombre_ejecucion, log
     )
     folder_dev = subir_intermedios_dev(
-        carpetas["intermedios"], nombre_ejecucion, log
+        carpetas, nombre_ejecucion, log  # ← dict completo
     )
 
     resultado = {

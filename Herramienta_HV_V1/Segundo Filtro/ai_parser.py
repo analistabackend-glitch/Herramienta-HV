@@ -29,9 +29,7 @@ MAX_CHARS_CV = 18_000
 MODEL = "gpt-4o-mini"  # Rápido, económico y de alta calidad para parseo estructurado
 
 load_dotenv()
-import os
-
-api_key = os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 
 # ─────────────────────────────────────────────────────────────
