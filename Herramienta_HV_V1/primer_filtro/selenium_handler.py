@@ -17,6 +17,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
 
+
 import requests
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
@@ -41,10 +42,19 @@ from config import (
 # ── Regex precompiladas (se compilan una sola vez al importar) ─────────────────
 _RE_EDAD   = re.compile(r"(\d{1,2})\s*a[nñ]os?", re.IGNORECASE)
 _RE_SAL    = re.compile(
-    r"aspiraci[oó]n salarial[^\n]*\n\s*(?:[^\d$\n]*?)([\$\d.,]+(?:\s*a\s*[\$\d.,]+)?)",
+    # Captura la respuesta tras cualquier pregunta sobre salario/aspiración/pretensión,
+    # sin importar la redacción exacta de la vacante.
+    r"(?:[^\n]*(?:aspir|pretens|salar|remuner)[^\n]*)\n"
+    r"(?:\s*\n)*\s*([^\n]+)",
     re.IGNORECASE,
 )
-_RE_SAB    = re.compile(r"s[aá]bados?\s*\n\s*(\w+)", re.IGNORECASE)
+_RE_SAB    = re.compile(
+    # Captura SI/NO tras cualquier pregunta que mencione sábado/sabado
+    # o disponibilidad de fin de semana, sin importar la redacción exacta.
+    r"(?:[^\n]*(?:s[aá]bado|disponibilidad[^\n]{0,30}(?:fin\s*de\s*semana|weekend))[^\n]*)"
+    r"\n(?:\s*\n)*\s*(SI|NO)\b",
+    re.IGNORECASE,
+)
 _RE_NUM    = re.compile(r"[^\d.,]")
 _RE_GRUPOS = re.compile(r"\d+(?:[.,]\d+)*")
 _RE_RANGO  = re.compile(r"\d\s*(?:a|-)\s*\d", re.IGNORECASE)
@@ -125,7 +135,6 @@ def _copiar_cookies(source_driver, dest_driver):
 # ══════════════════════════════════════════
 #  EXTRACCIÓN DE URLs
 # ══════════════════════════════════════════
-
 def extraer_urls(driver, url_vacante, log):
     """
     Extrae todas las URLs de candidatos recorriendo la paginación de Computrabajo.
@@ -236,17 +245,56 @@ def _num_col(t):
 
 
 def parsear_salario(texto):
+    """
+    Convierte texto libre de salario a un entero (pesos colombianos).
+    Maneja:
+      - Números con separadores mixtos: 2.500.000, 2,500,000, 2'500'000, 2'500.000
+      - Forma corta con apostrofe: 2'5 → 2.500.000, 2'8 → 2.800.000
+      - Notación M/m: 2.5M → 2.500.000
+      - Rangos "Entre X a Y" → toma el menor
+      - Doble valor ("200000 2500000") → toma el mayor (el primero suele ser error)
+      - Texto libre ("A convenir", "SMMLV") → retorna None (sin filtrar)
+    """
     if not texto:
         return None
-    limpio = texto.replace("$", "")
+
+    limpio = texto.strip().replace("$", "")
+
+    # Forma corta: "2'5" o "2'8" → N millones + D*100_000
+    m_corto = re.match(r"^(\d)[\'](\d)$", limpio.strip())
+    if m_corto:
+        return int(m_corto.group(1)) * 1_000_000 + int(m_corto.group(2)) * 100_000
+
+    # Notación M/m: "2.5M", "2,5M", "2M"
+    m_mill = re.match(r"^([\d][\d.,]*)\s*[Mm]$", limpio.strip())
+    if m_mill:
+        try:
+            val = float(m_mill.group(1).replace(",", "."))
+            return int(val * 1_000_000)
+        except Exception:
+            pass
+
+    # Normalizar apóstrofes como separadores de miles: 2'500'000 → 2500000
+    limpio = re.sub(r"(\d)[\'](\d)", r"\1\2", limpio)
+
     grupos = _RE_GRUPOS.findall(limpio)
     if not grupos:
-        return None
+        return None  # texto libre ("A convenir", "SMMLV", etc.)
+
     if len(grupos) >= 2 and _RE_RANGO.search(limpio):
+        # Rango "Entre X a Y" → tomar el menor
         v1, v2 = _num_col(grupos[0]), _num_col(grupos[1])
         if v1 and v2:
             return min(v1, v2)
         return v1 or v2
+
+    if len(grupos) >= 2:
+        # Doble valor sin rango ("200000 2500000") → tomar el mayor
+        vals = [_num_col(g) for g in grupos[:2]]
+        vals = [v for v in vals if v]
+        if vals:
+            return max(vals)
+
     return _num_col(grupos[0])
 
 

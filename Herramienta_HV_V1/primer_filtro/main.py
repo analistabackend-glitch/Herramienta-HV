@@ -45,7 +45,8 @@ import sys
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent / "Segundo Filtro"))
 from token_tracker import reporte, reset
-
+import tkinter as tk
+from tkinter import messagebox
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -247,15 +248,6 @@ def procesar_candidatos(driver, urls, config_filtros, carpetas, log, callback_pr
     log(f"  📄 HVs descargadas: {len(rutas_descargadas)}")
     return aprobados, rechazados
 
-
-# ══════════════════════════════════════════════════════════════════════════════
-#  REPORTE FINAL
-# ══════════════════════════════════════════════════════════════════════════════
-
-
-
-
-
 # ══════════════════════════════════════════════════════════════════════════════
 #  SEGUNDO FILTRO (IA - Groq)
 # ══════════════════════════════════════════════════════════════════════════════
@@ -427,6 +419,12 @@ def correr_tercer_filtro(carpetas, config_filtros, aprobados_f1, rechazados_f1, 
 #  PROCESO PRINCIPAL
 # ══════════════════════════════════════════════════════════════════════════════
 
+def mostrar_popup(mensaje):
+    root = tk.Tk()
+    root.withdraw()  # Oculta la ventana principal
+    messagebox.showinfo("Información", mensaje)
+    root.destroy()
+
 def correr_proceso(config_filtros, ui):
     from token_tracker import reset
     reset()  # ✅ IMPORTANTE: reinicia tokens en cada ejecución
@@ -495,9 +493,7 @@ def correr_proceso(config_filtros, ui):
 
             log("\nExtrayendo descripción de la vacante...")
 
-            #AQUI
-
-            log("\nExtrayendo descripción de la vacante...")
+            #-------------------------------- IMPORTANTE: Validar que la descripción es correcta antes de seguir -----------------🔥
 
             try:
                 from selenium_handler import extraer_descripcion_vacante
@@ -557,7 +553,13 @@ def correr_proceso(config_filtros, ui):
             urls = extraer_urls(driver, config_filtros["url_vacante"], log)
 
             if not urls:
-                log("ERROR: No se encontraron candidatos")
+                log("No se encontraron aspirantes.")
+
+                ui.root.after(0, lambda: messagebox.showinfo(
+                    "Información",
+                    "⚠️ No se encontraron aspirantes"
+                ))
+
                 ui.proceso_terminado(False)
                 return
 
@@ -566,6 +568,25 @@ def correr_proceso(config_filtros, ui):
                 driver, urls, config_filtros, carpetas, log,
                 ui.actualizar_progreso
             )
+            if not aprobados:
+                log("Todos los candidatos fueron rechazados.")
+
+                ui.root.after(0, lambda: messagebox.showinfo(
+                    "Sin aprobados",
+                    "⚠️ Todos los aspirantes fueron rechazados"
+                ))
+
+            else:
+                # 🔥 SOLO si hay aprobados revisa HVs
+                hvs_descargadas = [c for c in aprobados if c.get("ruta_hv")]
+
+                if not hvs_descargadas:
+                    log(f"No se descargó ninguna HV de {len(aprobados)} candidatos aprobados.")
+
+                    ui.root.after(0, lambda: messagebox.showinfo(
+                        "Sin HVs",
+                        "⚠️ No se descargó ninguna hoja de vida"
+                    ))
 
             ui.barra1_terminada()
 

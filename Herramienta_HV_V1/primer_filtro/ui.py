@@ -601,33 +601,37 @@ class AppUI:
     # ── Lógica de caché ────────────────────────────────────────────────────────
 
     def _habilitar_config(self):
-        """Desbloquea los campos bloqueados por caché."""
-        for e in self._entries_filtros:
-            if e:
-                e.config(state="normal")
-        for rb in self.radios_sab:
-            rb.config(state="normal")
-        self.v_vacante_entry.config(state="normal") if hasattr(self, "v_vacante_entry") else None
-        # También desbloquear vacante y url
-        for w in self.entries_bloqueables[:2]:
-            if w:
-                try:
-                    w.config(state="normal")
-                except Exception:
-                    pass
+        print("CLICK EN HABILITAR CONFIG")
+
+        # 🔥 Desbloquear TODOS los entries
+        for widget in self.root.winfo_children():
+            self._desbloquear_recursivo(widget)
+
+        # 🔥 Variables internas
         self.usar_cache_filtros = False
+
+        # 🔥 Desactivar botón
         self.btn_habilitar.config(state="disabled", bg="#CCCCCC")
-        # 🔥 Restaurar botón normal
+
+        # 🔥 Restaurar botón iniciar
         self.btn_iniciar.config(
             text="▶  Iniciar filtrado de HVs",
             bg=COLOR_NARANJA,
             activebackground=COLOR_NARANJA_HOVER
         )
-        # 🔥 IMPORTANTE: actualizar colores internos correctamente
+
         self.btn_iniciar.default_bg = COLOR_NARANJA
         self.btn_iniciar.hover_bg   = COLOR_NARANJA_HOVER
+        
+    def _desbloquear_recursivo(self, widget):
+        try:
+            if isinstance(widget, (tk.Entry, tk.Radiobutton)):
+                widget.config(state="normal")
+        except:
+            pass
 
-
+        for child in widget.winfo_children():
+            self._desbloquear_recursivo(child)
     def _bloquear_filtros(self):
         """Bloquea los campos que invalidan la caché."""
         for e in self.entries_bloqueables:

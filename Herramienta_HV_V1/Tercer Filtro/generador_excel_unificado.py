@@ -152,14 +152,28 @@ def _construir_hoja1(writer, resumen_primer_filtro: list):
 # HOJA 2 — RESUMEN RESULTADOS FINALES  (tercer filtro)
 # ─────────────────────────────────────────────────────────
 
-def _construir_hoja2(writer, resumen_tercer_filtro: list):
+def _construir_hoja2(writer, resumen_tercer_filtro: list, lookup_hoja1=None):
     """
     Escribe la hoja 'Resumen resultados finales'.
     Garantiza que SIEMPRE se llenen ambos análisis (experiencia y académico),
     aun cuando el candidato fue descartado por inestabilidad laboral.
+
+    lookup_hoja1: dict {nombre_lower -> {"Edad": ..., "Salario aspirado": ..., "Sábados": ...}}
+    construido a partir de resumen_primer_filtro para enriquecer esta hoja.
     """
+    # lookup_hoja1 puede ser un dict o callable; normalizamos a callable
+    if lookup_hoja1 is None:
+        _lookup_fn = lambda _: {}
+    elif callable(lookup_hoja1):
+        _lookup_fn = lookup_hoja1
+    else:
+        _lookup_fn = lambda n: lookup_hoja1.get(n, {})
+
     columnas = [
         "Candidato",
+        "Edad",
+        "Salario aspirado",
+        "Sábados",
         "Clasificación",
         "Score Final (%)",
         "Score Experiencia (%)",
@@ -187,8 +201,14 @@ def _construir_hoja2(writer, resumen_tercer_filtro: list):
         score_exp = r.get("Score Experiencia (%)") or 0
         score_aca = r.get("Score Académico (%)")   or 0
 
+        # Enriquecer con datos de hoja 1
+        datos_h1 = _lookup_fn(r.get("Candidato", ""))
+
         filas.append({
             "Candidato"             : r.get("Candidato", ""),
+            "Edad"                  : datos_h1.get("Edad", ""),
+            "Salario aspirado"      : datos_h1.get("Salario aspirado", ""),
+            "Sábados"               : datos_h1.get("Sábados", ""),
             "Clasificación"         : r.get("Clasificación", ""),
             "Score Final (%)"       : r.get("Score Final (%)", 0),
             "Score Experiencia (%)" : score_exp,
@@ -417,9 +437,70 @@ def generar_excel_unificado(
         "no_hv"         : len(archivos_no_hv),
     }
 
+    # Lookup para enriquecer hoja 2 con Edad, Salario aspirado y Sábados de hoja 1.
+    # Usa normalización (sin tildes, minúsculas) + matching flexible por palabras
+    # para cubrir casos donde el nombre en hoja 2 está truncado o difiere levemente.
+    import unicodedata as _ud, re as _re
+
+    def _norm(s):
+        s = str(s).strip().lower()
+        s = _ud.normalize("NFD", s)
+        s = "".join(c for c in s if _ud.category(c) != "Mn")
+        return _re.sub(r"\s+", " ", s)
+
+    def _palabras(s):
+        return set(_norm(s).split())
+
+    _h1_entries = [
+        (_norm(d.get("nombre", "")), _palabras(d.get("nombre", "")),
+         {"Edad": d.get("edad", ""), "Salario aspirado": d.get("salario", ""), "Sábados": d.get("sabados", "")})
+        for d in resumen_primer_filtro if d.get("nombre")
+    ]
+
+    # Palabras muy comunes en nombres colombianos que NO sirven como apellido único
+    _PALABRAS_COMUNES = {
+        "andres", "julian", "juan", "carlos", "daniel", "david", "luis",
+        "jose", "jorge", "miguel", "santiago", "cristian", "sebastian",
+        "nicolas", "alejandro", "stiven", "jhon", "kevin", "oscar", "edgar",
+        "diana", "laura", "paula", "julieth", "luisa", "yessica", "jazmin",
+        "maria", "andrea", "angela", "camilo", "felipe", "jhan", "darwin",
+        "samuel", "ruben", "nestor", "jonatan", "deivid", "brayan", "cesar",
+        "de", "la", "del", "los", "las",
+    }
+
+    def _buscar_h1(nombre_h2):
+        """Retorna el dict de datos del candidato más parecido en hoja 1, o {} si no hay."""
+        n2_norm  = _norm(nombre_h2)
+        n2_words = _palabras(nombre_h2)
+        # 1. Coincidencia exacta normalizada
+        for n1_norm, _, datos in _h1_entries:
+            if n1_norm == n2_norm:
+                return datos
+        # 2. Prefijo
+        for n1_norm, _, datos in _h1_entries:
+            if n1_norm.startswith(n2_norm) or n2_norm.startswith(n1_norm):
+                return datos
+        # 3. Solapamiento de palabras: al menos 2 palabras en común
+        best_score, best_datos = 0, {}
+        for _, n1_words, datos in _h1_entries:
+            score = len(n2_words & n1_words)
+            if score > best_score:
+                best_score, best_datos = score, datos
+        if best_score >= 2:
+            return best_datos
+        # 4. Una sola palabra en común, pero debe ser un apellido (no palabra común)
+        for _, n1_words, datos in _h1_entries:
+            palabras_significativas = (n2_words & n1_words) - _PALABRAS_COMUNES
+            if len(palabras_significativas) >= 1:
+                return datos
+        return {}
+
+    lookup_hoja1 = {_norm(d.get("nombre", "")): _buscar_h1(d.get("nombre", ""))
+                    for d in resumen_primer_filtro if d.get("nombre")}
+
     with pd.ExcelWriter(excel_path, engine="openpyxl") as writer:
         _construir_hoja1(writer, resumen_primer_filtro)
-        _construir_hoja2(writer, resumen_tercer_filtro)
+        _construir_hoja2(writer, resumen_tercer_filtro, _buscar_h1)
         _construir_hoja3(writer, cfg_filtro1, vacante_data,
                          umbral_opcionado, umbral_probable, conteos)
 
