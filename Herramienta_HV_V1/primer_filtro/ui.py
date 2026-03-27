@@ -610,8 +610,15 @@ class AppUI:
         # 🔥 Variables internas
         self.usar_cache_filtros = False
 
-        # 🔥 Desactivar botón
-        self.btn_habilitar.config(state="disabled", bg="#CCCCCC")
+        # Opcional: cambiar apariencia para feedback visual
+        self.btn_habilitar.config(
+            text="✔ Configuración habilitada",
+            bg=COLOR_NARANJA,
+            activebackground=COLOR_NARANJA_HOVER
+        )
+
+        self.btn_habilitar.default_bg = COLOR_NARANJA
+        self.btn_habilitar.hover_bg   = COLOR_NARANJA_HOVER
 
         # 🔥 Restaurar botón iniciar
         self.btn_iniciar.config(
@@ -674,8 +681,6 @@ class AppUI:
 
                 self._bloquear_filtros()
                 self.usar_cache_filtros = True
-                self._bloquear_filtros()
-                self.usar_cache_filtros = True
 
                 # Detectar modo y mostrar texto apropiado
                 try:
@@ -688,6 +693,16 @@ class AppUI:
                     texto_btn = textos.get(modo_cache, "⚡  Re-evaluar con caché")
                 except Exception:
                     texto_btn = "⚡  Re-evaluar con caché"
+               # DESPUÉS
+                self.btn_habilitar.pack(anchor="w", pady=(6, 2))
+                self.btn_habilitar.config(
+                    text="⚠ Habilitar configuración",
+                    bg="#4CAF50",
+                    activebackground="#43a047"
+                )
+                self.btn_habilitar.default_bg = "#4CAF50"
+                self.btn_habilitar.hover_bg   = "#43a047"
+
                 self.btn_iniciar.config(
                     text=texto_btn,
                     bg="#28A745",
@@ -780,6 +795,16 @@ class AppUI:
                         texto_btn = textos.get(modo_cache, "⚡  Re-evaluar con caché")
                     except Exception:
                         texto_btn = "⚡  Re-evaluar con caché"
+                    # DESPUÉS
+                    self.btn_habilitar.pack(anchor="w", pady=(6, 2))
+                    self.btn_habilitar.config(
+                        text="⚠ Habilitar configuración",
+                        bg="#4CAF50",
+                        activebackground="#43a047"
+                    )
+                    self.btn_habilitar.default_bg = "#4CAF50"
+                    self.btn_habilitar.hover_bg   = "#43a047"
+
                     self.btn_iniciar.config(
                         state="normal",
                         text=texto_btn,

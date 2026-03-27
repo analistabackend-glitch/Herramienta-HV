@@ -88,13 +88,13 @@ def crear_driver(headless: bool = False):
 #  LOGIN
 # ══════════════════════════════════════════
 
+
 def login(driver, log):
     log("Iniciando sesion en Computrabajo...")
     driver.get(COMPUTRABAJO_OFFERS_URL)
 
-    # ❌ ANTES: time.sleep(2)
-    # ✅ AHORA: espera dinámica — avanza en cuanto la URL cambia o aparece el campo
     wait = WebDriverWait(driver, SELENIUM_WAIT_TIMEOUT)
+
     try:
         wait.until(lambda d: d.current_url != "about:blank")
     except TimeoutException:
@@ -106,15 +106,44 @@ def login(driver, log):
             campo_user = wait.until(EC.presence_of_element_located((By.ID, "UserName")))
             campo_user.clear()
             campo_user.send_keys(COMPUTRABAJO_EMAIL)
+
             campo_pass = driver.find_element(By.ID, "fiesta")
             campo_pass.clear()
             campo_pass.send_keys(COMPUTRABAJO_PASSWORD)
+
+            # Click login
             driver.find_element(
                 By.CSS_SELECTOR, "button[type='submit'], input[type='submit']"
             ).click()
-            wait.until(lambda d: "login" not in d.current_url.lower())
+
+            # 🔥 ESPERA INTELIGENTE (AQUÍ ESTÁ LA CLAVE)
+            try:
+                wait.until(lambda d: (
+                    "login" not in d.current_url.lower()
+                    or "existe un usuario utilizando los mismos datos" in d.page_source.lower()
+                    or "no es posible ingresar a esta cuenta" in d.page_source.lower()
+                    or "inténtelo más tarde" in d.page_source.lower()   # 🔥 NUEVO
+                ))
+            except TimeoutException:
+                log("  [WARN] No se pudo determinar estado del login")
+
+            # 🔍 Leer página DESPUÉS de esperar
+            texto = driver.page_source.lower()
+
+            # 🔴 DETECTAR SESIÓN ACTIVA
+            if any(x in texto for x in [
+                "existe un usuario utilizando los mismos datos",
+                "no es posible ingresar a esta cuenta",
+                "inténtelo más tarde",          # 🔥 NUEVO
+                "sales_colombia@computrabajo",  # 🔥 NUEVO
+            ]):
+                log("❌ Sesión activa detectada en Computrabajo")
+                return "SESION_ACTIVA"
+
+            # ✅ Login correcto
             log("Login exitoso")
             return True
+
         except TimeoutException:
             log("ERROR: Login fallido")
             return False

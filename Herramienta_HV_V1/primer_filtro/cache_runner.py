@@ -13,7 +13,8 @@ import shutil
 import re
 from datetime import datetime
 from pathlib import Path
-
+from email_notifier import enviar_correo_exito, enviar_correo_error
+from token_tracker import calcular_costo
 
 # ── Helpers de persistencia del resumen F1 ────────────────────────────────────
 
@@ -80,7 +81,8 @@ def detectar_modo_cache() -> tuple:
 # ── Proceso principal desde caché ─────────────────────────────────────────────
 
 def correr_proceso_desde_cache(config_filtros, ui):
-    
+    error_ocurrido = False
+    error_mensaje = ""
     """
     Ejecuta SOLO el Tercer Filtro reutilizando los datos de la última ejecución.
     Se usa cuando el usuario solo cambia pesos o palabras clave.
@@ -310,6 +312,10 @@ def correr_proceso_desde_cache(config_filtros, ui):
                 ui.barra2_terminada()
             except Exception as e:
                 import traceback
+
+                error_ocurrido = True
+                error_mensaje += "\n[Segundo filtro]\n" + traceback.format_exc()
+
                 log(f"  [ERROR] Segundo filtro falló: {e}")
                 log(traceback.format_exc())
                 ui.barra2_terminada()
@@ -348,6 +354,10 @@ def correr_proceso_desde_cache(config_filtros, ui):
             ui.barra3_terminada()
         except Exception as e:
             import traceback
+
+            error_ocurrido = True
+            error_mensaje += "\n[Tercer filtro]\n" + traceback.format_exc()
+
             log(f"  [ERROR] Tercer filtro falló: {e}")
             log(traceback.format_exc())
             ui.barra3_terminada()
@@ -378,14 +388,35 @@ def correr_proceso_desde_cache(config_filtros, ui):
             ui.barra4_terminada(ok=False)
         except Exception as e:
             import traceback as _tb
+
+            error_ocurrido = True
+            error_mensaje += "\n[Drive]\n" + _tb.format_exc()
+
             log(f"  [WARN] Error en subida a Drive: {e}")
             log(_tb.format_exc())
-            log(f"📁 Resultados locales en: {resultados_nuevos}")
             ui.barra4_terminada(ok=False)
+        # ── Calcular costo ─────────────────────────────────────────
+        costo = calcular_costo()
 
-        # ── Limpiar carpeta TEMP ──────────────────────────────────────────
-        # El log.txt vive dentro de raiz_nueva, así que hay que escribir
-        # el mensaje ANTES de borrar la carpeta, no después.
+        # ── Enviar correo (ANTES de borrar TEMP) ───────────────────
+        if error_ocurrido:
+            enviar_correo_error(
+                asunto=f"Auto. Filtrado HV — {config_filtros.get('vacante')} — ⚠️ Error cache",
+                mensaje=error_mensaje,
+                log=log,
+                vacante=config_filtros.get("vacante"),
+                fatal=False
+            )
+        else:
+            enviar_correo_exito(
+                vacante=config_filtros.get("vacante"),
+                costo=costo,
+                log=log,
+                desde_cache=True,
+                modo_cache=modo
+            )
+
+        # ── Limpiar carpeta TEMP ───────────────────────────────────
         try:
             import shutil as _sh
             log("  🗑  Eliminando carpeta TEMP...")
@@ -393,10 +424,19 @@ def correr_proceso_desde_cache(config_filtros, ui):
         except Exception as e:
             print(f"  [WARN] No se pudo eliminar TEMP: {e}")
 
+        # ── Finalizar UI ───────────────────────────────────────────
         ui.proceso_terminado(True)
+            
 
     except Exception as e:
         import traceback
         log(f"\n❌ ERROR FATAL: {e}")
         log(traceback.format_exc())
+        enviar_correo_error(
+            asunto=f"Auto. Filtrado HV — {config_filtros.get('vacante')} — ❌ Error fatal cache",
+            mensaje=traceback.format_exc(),
+            log=print,
+            vacante=config_filtros.get("vacante"),
+            fatal=True
+        )
         ui.proceso_terminado(False)

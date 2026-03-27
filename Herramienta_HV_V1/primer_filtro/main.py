@@ -47,6 +47,7 @@ sys.path.append(str(Path(__file__).parent.parent / "Segundo Filtro"))
 from token_tracker import reporte, reset
 import tkinter as tk
 from tkinter import messagebox
+from email_notifier import enviar_correo_exito, enviar_correo_error
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -62,19 +63,6 @@ def _slug(texto, max_len=40):
 def crear_estructura_ejecucion(nombre_vacante):
     """
     Crea la estructura de carpetas para una ejecución y retorna un dict con las rutas.
-
-    📁 Ejecuciones/
-    └── 📁 <vacante>_<dd-mm-aa>_<hh-mm>/
-        ├── 📄 log.txt
-        ├── 📁 Archivos intermedios - .../
-        │   ├── 📁 Primer Filtro/
-        │   ├── 📁 Segundo Filtro/
-        │   └── 📁 Tercer Filtro/
-        └── 📁 Resultados - .../
-            ├── 📁 Descartados/
-            ├── 📁 Opcionales/
-            ├── 📁 Probablemente Opcionados/
-            └── (Resumen se crea al final)
     """
     ts        = datetime.now().strftime("%d-%m-%y_%H-%M")
     slug      = _slug(nombre_vacante)
@@ -427,6 +415,9 @@ def mostrar_popup(mensaje):
 
 def correr_proceso(config_filtros, ui):
     from token_tracker import reset
+    error_ocurrido = False
+    error_mensaje = ""
+    
     reset()  # ✅ IMPORTANTE: reinicia tokens en cada ejecución
     """Ejecuta el proceso completo de filtrado."""
 
@@ -477,7 +468,19 @@ def correr_proceso(config_filtros, ui):
         driver = crear_driver()
 
         try:
-            if not login(driver, log):
+            resultado_login = login(driver, log)
+
+            if resultado_login == "SESION_ACTIVA":
+                ui.root.after(0, lambda: messagebox.showerror(
+                    "Error de sesión",
+                    "❌ No se pudo iniciar sesión.\n\n"
+                    "Ya existe una sesión activa en Computrabajo.\n"
+                    "Cierra otras ventanas o sesiones abiertas e intenta nuevamente."
+                ))
+                ui.proceso_terminado(False)
+                return
+
+            if not resultado_login:
                 ui.proceso_terminado(False)
                 return
 
@@ -557,7 +560,7 @@ def correr_proceso(config_filtros, ui):
 
                 ui.root.after(0, lambda: messagebox.showinfo(
                     "Información",
-                    "⚠️ No se encontraron aspirantes"
+                    "⚠️ No se encontraron aspirantes NO LEIDOS en la oferta"
                 ))
 
                 ui.proceso_terminado(False)
@@ -606,6 +609,9 @@ def correr_proceso(config_filtros, ui):
                 ui.barra2_terminada()
             except Exception as e:
                 import traceback
+                error_ocurrido = True
+                error_mensaje += "\n[Segundo filtro]\n" + traceback.format_exc()
+
                 log(f"  [ERROR] Segundo filtro falló: {e}")
                 log(traceback.format_exc())
                 log("  Continuando sin segundo filtro...")
@@ -623,11 +629,14 @@ def correr_proceso(config_filtros, ui):
                 ui.barra3_terminada()
             except Exception as e:
                 import traceback
+
+                error_ocurrido = True
+                error_mensaje += "\n[Tercer filtro]\n" + traceback.format_exc()
+
                 log(f"  [ERROR] Tercer filtro falló: {e}")
                 log(traceback.format_exc())
                 log("  Continuando sin tercer filtro...")
                 ui.barra3_terminada()
-
             # Guardar rutas + resumen para reutilización con caché
             guardar_ruta_ejecucion(carpetas)
             from cache_runner import guardar_resumen_f1; guardar_resumen_f1(aprobados, rechazados)
@@ -639,7 +648,6 @@ def correr_proceso(config_filtros, ui):
             log("█" * 60)
 
             costo = calcular_costo()
-
             log(f"\n💰 COSTO IA")
             log(f"   Tokens input : {costo['input_tokens']}")
             log(f"   Tokens output: {costo['output_tokens']}")
@@ -665,6 +673,10 @@ def correr_proceso(config_filtros, ui):
                 ui.barra4_terminada(ok=False)
             except Exception as e:
                 import traceback as _tb
+
+                error_ocurrido = True
+                error_mensaje += "\n[Drive]\n" + _tb.format_exc()
+
                 log(f"  [WARN] Error en subida a Drive: {e}")
                 log(_tb.format_exc())
                 log(f"📁 Resultados locales en: {carpetas['resultados']}")
@@ -690,6 +702,24 @@ def correr_proceso(config_filtros, ui):
                 _shutil.rmtree(carpetas["raiz"], ignore_errors=True)
             except Exception as e:
                 log(f"  [WARN] No se pudo eliminar TEMP: {e}")
+            
+            
+            if error_ocurrido:
+                enviar_correo_error(
+                    asunto=f"Auto. Filtrado HV — {config_filtros.get('vacante')} — ⚠️ Error parcial",
+                    mensaje=error_mensaje,
+                    log=log,
+                    vacante=config_filtros.get("vacante"),
+                    fatal=False
+                )
+            else:
+                enviar_correo_exito(
+                    vacante=config_filtros.get("vacante"),
+                    costo=costo,
+                    log=log,
+                    desde_cache=False
+                )
+
 
             ui.proceso_terminado(True)
 
@@ -699,8 +729,21 @@ def correr_proceso(config_filtros, ui):
 
     except Exception as e:
         import traceback
+        error_msg = traceback.format_exc()
+
         log(f"\n❌ ERROR FATAL: {e}")
-        log(traceback.format_exc())
+        log(error_msg)
+
+        from email_notifier import enviar_correo_error
+
+        enviar_correo_error(
+            asunto=f"Auto. Filtrado HV — {config_filtros.get('vacante')} — ❌ Error fatal",
+            mensaje=error_msg,
+            log=print,
+            vacante=config_filtros.get("vacante"),
+            fatal=True
+        )
+
         ui.proceso_terminado(False)
 
 
