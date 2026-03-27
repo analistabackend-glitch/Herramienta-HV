@@ -3,7 +3,7 @@ generador_excel_unificado.py
 ============================
 Genera un único Excel consolidado con tres hojas:
 
-  Hoja 1 – "Resumen HV descargadas"   : datos del primer filtro (TODOS los candidatos)
+  Hoja 1 – "Resumen HV descargadas - No descargadas"   : datos del primer filtro (TODOS los candidatos)
   Hoja 2 – "Resumen resultados finales": datos del tercer filtro (candidatos evaluados por IA)
   Hoja 3 – "Parámetros"               : parámetros del filtro 1 y del filtro 3
 
@@ -127,9 +127,9 @@ def _construir_hoja1(writer, resumen_primer_filtro: list):
     df = pd.DataFrame(filas) if filas else pd.DataFrame(
         columns=["Estado", "Motivo", "Nombre", "Edad", "Salario aspirado", "Sábados", "URL perfil"]
     )
-    df.to_excel(writer, index=False, sheet_name="Resumen HV descargadas")
+    df.to_excel(writer, index=False, sheet_name="Resumen HV descargadas - No descargadas")
 
-    ws = writer.sheets["Resumen HV descargadas"]
+    ws = writer.sheets["Resumen HV descargadas - No descargadas"]
 
     # Encabezado
     _estilo_encabezado(ws, 1)
