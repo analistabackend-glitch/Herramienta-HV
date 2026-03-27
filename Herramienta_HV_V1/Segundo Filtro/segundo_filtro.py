@@ -216,9 +216,9 @@ def procesar(path: str) -> dict:
         # 1. Extraer texto (con caché optimizado)
         texto = extraer_texto(path)
         
+        # DESPUÉS
         if not texto.strip():
-            print(f"  ⚠️ No se pudo extraer texto: {nombre}")
-            return {"error": "sin_texto", "archivo": nombre}
+            raise ValueError("No se pudo extraer texto del archivo (posible PDF escaneado o protegido)")
         
         # 2. Detección por longitud excesiva (sin gastar tokens de IA)
         if len(texto) > UMBRAL_MAX_CHARS_HV:
