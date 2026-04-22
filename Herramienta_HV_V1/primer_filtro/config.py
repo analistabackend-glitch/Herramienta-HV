@@ -18,8 +18,15 @@ load_dotenv(_dotenv)
 # ─────────────────────────────────────────
 # CREDENCIALES COMPUTRABAJO
 # ─────────────────────────────────────────
+
+#prod
 COMPUTRABAJO_EMAIL    = os.getenv("COMPUTRABAJO_EMAIL")
 COMPUTRABAJO_PASSWORD = os.getenv("COMPUTRABAJO_PASSWORD")
+
+#dev
+#COMPUTRABAJO_EMAIL    = "contador@fertrac.com"
+#COMPUTRABAJO_PASSWORD = "Fcb830130469"
+
 
 if not COMPUTRABAJO_EMAIL or not COMPUTRABAJO_PASSWORD:
     raise EnvironmentError(
