@@ -73,9 +73,14 @@ def crear_driver(headless: bool = False):
     opts.add_argument("--disable-dev-shm-usage")
     opts.add_argument(f"--window-size={CHROME_WINDOW_SIZE}")
     if headless:
-        # headless reduce el overhead de renderizado en scraping masivo
+        # Perfil temporal único por instancia — evita conflicto entre drivers paralelos
+        import tempfile
+        opts.add_argument(f"--user-data-dir={tempfile.mkdtemp()}")
         opts.add_argument("--headless=new")
         opts.add_argument("--disable-gpu")
+    else:
+        # Perfil persistente — guarda sesión entre ejecuciones
+        opts.add_argument("--user-data-dir=C:/HVTool/chrome_profile")
     opts.add_experimental_option(
         "prefs", {"download.default_directory": str(CARPETA_DESCARGA.absolute())}
     )
@@ -627,25 +632,77 @@ def extraer_descripcion_vacante(driver, nombre_vacante, url_vacante_match, log, 
 #  DESCARGA DE HV (PDF / DOCX)
 # ══════════════════════════════════════════
 
+def _es_paywall(contenido: bytes, ct: str) -> bool:
+    """
+    Detecta si el contenido descargado es una página HTML de bloqueo/paywall
+    en lugar de un CV real.
+    """
+    if "text/html" in ct:
+        return True
+    if contenido[:4] != b"%PDF" and contenido[:2] != b"PK":
+        muestra = contenido[:3000].lower()
+        señales_paywall = [
+            b"conozca",
+            b"computrabajo essential",
+            b"todos sus planes",
+            b"inicie sesi",
+            b"iniciar sesi",
+            b"<!doctype html",
+            b"<html",
+            b"paywall",
+            b"suscr",
+        ]
+        if any(s in muestra for s in señales_paywall):
+            return True
+    return False
+
+
 def descargar_hv(driver, url_hv, nombre, carpeta=None):
-    """Descarga el archivo de HV usando las cookies activas de Selenium."""
+    """
+    Descarga el archivo de HV usando las cookies activas de Selenium.
+    Incluye headers completos, guardia anti-paywall y fallback via Selenium.
+    """
     destino_dir = Path(carpeta) if carpeta else CARPETA_DESCARGA
     destino_dir.mkdir(parents=True, exist_ok=True)
 
     session = requests.Session()
     for c in driver.get_cookies():
         session.cookies.set(c["name"], c["value"])
-    headers = {"User-Agent": driver.execute_script("return navigator.userAgent")}
 
-    r = session.get(url_hv, headers=headers, stream=True, timeout=30)
+    headers = {
+        "User-Agent"      : driver.execute_script("return navigator.userAgent"),
+        "Referer"         : driver.current_url,
+        "Accept"          : "application/pdf,application/octet-stream,"
+                            "application/msword,"
+                            "application/vnd.openxmlformats-officedocument"
+                            ".wordprocessingml.document,*/*;q=0.8",
+        "Accept-Language" : "es-CO,es;q=0.9,en;q=0.8",
+        "Accept-Encoding" : "gzip, deflate, br",
+        "Connection"      : "keep-alive",
+        "Sec-Fetch-Dest"  : "document",
+        "Sec-Fetch-Mode"  : "navigate",
+        "Sec-Fetch-Site"  : "same-origin",
+    }
+
+    try:
+        r = session.get(url_hv, headers=headers, stream=True,
+                        timeout=30, allow_redirects=True)
+    except Exception:
+        return None
+
     if r.status_code != 200:
         return None
 
     contenido = b"".join(r.iter_content(8192))
-    if len(contenido) < 1000:
+
+    if len(contenido) < 3000:
         return None
 
     ct = r.headers.get("Content-Type", "").lower()
+
+    if _es_paywall(contenido, ct):
+        return _descargar_hv_via_selenium(driver, url_hv, nombre, destino_dir)
+
     if contenido[:4] == b"%PDF" or "pdf" in ct:
         ext = ".pdf"
     elif (
@@ -656,7 +713,7 @@ def descargar_hv(driver, url_hv, nombre, carpeta=None):
     ):
         ext = ".docx"
     else:
-        ext = ".pdf"
+        return None
 
     ruta = destino_dir / f"{nombre}{ext}"
     with open(ruta, "wb") as f:
@@ -664,11 +721,57 @@ def descargar_hv(driver, url_hv, nombre, carpeta=None):
     return ruta
 
 
+def _descargar_hv_via_selenium(driver, url_hv, nombre, destino_dir: Path):
+    """
+    Fallback: descarga directamente desde el navegador Selenium cuando
+    requests recibe un paywall. Chrome ya tiene la sesión activa y pasa
+    todos los checks de fingerprinting.
+    """
+    antes = set(destino_dir.glob("*"))
+
+    try:
+        driver.get(url_hv)
+    except Exception:
+        return None
+
+    deadline = time.time() + 20
+    nuevo = None
+    while time.time() < deadline:
+        time.sleep(0.5)
+        ahora = set(destino_dir.glob("*"))
+        recientes = ahora - antes
+        completos = [f for f in recientes if f.suffix != ".crdownload"]
+        if completos:
+            nuevo = completos[0]
+            break
+
+    if not nuevo or not nuevo.exists():
+        return None
+
+    ext_final = nuevo.suffix if nuevo.suffix in (".pdf", ".docx") else ".pdf"
+    ruta_final = destino_dir / f"{nombre}{ext_final}"
+    try:
+        nuevo.rename(ruta_final)
+    except Exception:
+        ruta_final = nuevo
+
+    try:
+        with open(ruta_final, "rb") as f:
+            muestra = f.read(3000)
+        if _es_paywall(muestra, ""):
+            ruta_final.unlink(missing_ok=True)
+            return None
+    except Exception:
+        pass
+
+    return ruta_final
+
+
 def descargar_hv_thread(driver, datos, nombre_f, carpeta_vacante):
     """Descarga la HV y la copia al caché. Retorna la ruta o None."""
     try:
         ruta = descargar_hv(driver, datos["url_pdf"], nombre_f, carpeta=carpeta_vacante)
-        if ruta:
+        if ruta and Path(ruta).exists():
             shutil.copy(ruta, CACHE_PDF / Path(ruta).name)
         return ruta
     except Exception:
@@ -677,51 +780,108 @@ def descargar_hv_thread(driver, datos, nombre_f, carpeta_vacante):
 
 def descargar_hvs_en_paralelo(driver, lista_datos, carpeta_vacante, log, max_workers=6):
     """
-    ✅ NUEVA función: descarga todas las HVs en paralelo con requests (sin Selenium).
-    `lista_datos` es la lista de dicts retornada por extraer_datos_y_filtrar.
-    Solo descarga candidatos que pasaron el filtro y tienen url_pdf.
+    Descarga todas las HVs en paralelo con requests.
+    Si requests devuelve un paywall, reintenta via Selenium (fallback).
     """
     pendientes = [d for d in lista_datos if d.get("pasa_filtro") and d.get("url_pdf")]
     if not pendientes:
         log("  Sin HVs para descargar.")
         return []
 
-    # Capturar cookies una sola vez
-    cookies = {c["name"]: c["value"] for c in driver.get_cookies()}
+    cookies    = {c["name"]: c["value"] for c in driver.get_cookies()}
     user_agent = driver.execute_script("return navigator.userAgent")
-    headers = {"User-Agent": user_agent}
+    referer    = driver.current_url
 
-    resultados = []
+    headers = {
+        "User-Agent"      : user_agent,
+        "Referer"         : referer,
+        "Accept"          : "application/pdf,application/octet-stream,"
+                            "application/msword,"
+                            "application/vnd.openxmlformats-officedocument"
+                            ".wordprocessingml.document,*/*;q=0.8",
+        "Accept-Language" : "es-CO,es;q=0.9,en;q=0.8",
+        "Accept-Encoding" : "gzip, deflate, br",
+        "Connection"      : "keep-alive",
+        "Sec-Fetch-Dest"  : "document",
+        "Sec-Fetch-Mode"  : "navigate",
+        "Sec-Fetch-Site"  : "same-origin",
+    }
+
+    destino = Path(carpeta_vacante)
+    destino.mkdir(parents=True, exist_ok=True)
+
+    resultados   = []
+    sin_descarga = []
 
     def _dl(d):
         nombre_f = re.sub(r"[^\w\s-]", "", d.get("nombre") or "candidato").strip()[:50]
-        session = requests.Session()
+        session  = requests.Session()
         session.cookies.update(cookies)
         try:
-            r = session.get(d["url_pdf"], headers=headers, stream=True, timeout=30)
+            r = session.get(
+                d["url_pdf"], headers=headers,
+                stream=True, timeout=30, allow_redirects=True
+            )
             if r.status_code != 200:
-                return None
+                return None, d
+
             contenido = b"".join(r.iter_content(8192))
-            if len(contenido) < 1000:
-                return None
+
+            if len(contenido) < 3000:
+                return None, d
+
             ct = r.headers.get("Content-Type", "").lower()
-            ext = ".pdf" if (contenido[:4] == b"%PDF" or "pdf" in ct) else ".docx"
-            ruta = Path(carpeta_vacante) / f"{nombre_f}{ext}"
-            ruta.parent.mkdir(parents=True, exist_ok=True)
+
+            if _es_paywall(contenido, ct):
+                return None, d
+
+            if contenido[:4] == b"%PDF" or "pdf" in ct:
+                ext = ".pdf"
+            elif (
+                contenido[:2] == b"PK"
+                or "wordprocessingml" in ct
+                or "msword" in ct
+                or d["url_pdf"].lower().endswith(".docx")
+            ):
+                ext = ".docx"
+            else:
+                return None, d
+
+            ruta = destino / f"{nombre_f}{ext}"
             with open(ruta, "wb") as f:
                 f.write(contenido)
             shutil.copy(ruta, CACHE_PDF / ruta.name)
-            return ruta
-        except Exception:
-            return None
+            return ruta, None
 
+        except Exception:
+            return None, d
+
+    # Fase 1: descarga paralela con requests
     with ThreadPoolExecutor(max_workers=max_workers) as ex:
         futures = {ex.submit(_dl, d): d for d in pendientes}
         for fut in as_completed(futures):
-            ruta = fut.result()
+            ruta, fallback = fut.result()
             if ruta:
                 log(f"  ✓ Descargado: {Path(ruta).name}")
                 resultados.append(ruta)
+            elif fallback:
+                sin_descarga.append(fallback)
+
+    # Fase 2: fallback secuencial via Selenium para los que fallaron
+    if sin_descarga:
+        log(f"  ⚠ {len(sin_descarga)} HV(s) bloqueadas por paywall → reintentando via Selenium...")
+        for d in sin_descarga:
+            nombre_f = re.sub(r"[^\w\s-]", "", d.get("nombre") or "candidato").strip()[:50]
+            try:
+                ruta = _descargar_hv_via_selenium(driver, d["url_pdf"], nombre_f, destino)
+                if ruta:
+                    shutil.copy(ruta, CACHE_PDF / ruta.name)
+                    log(f"  ✓ Descargado (Selenium): {ruta.name}")
+                    resultados.append(ruta)
+                else:
+                    log(f"  ✗ No se pudo descargar: {nombre_f}")
+            except Exception as e:
+                log(f"  ✗ Error Selenium fallback para {nombre_f}: {e}")
 
     log(f"  {len(resultados)}/{len(pendientes)} HVs descargadas.")
     return resultados

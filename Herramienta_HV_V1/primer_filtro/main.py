@@ -498,11 +498,31 @@ def correr_proceso(config_filtros, ui):
 
             #-------------------------------- IMPORTANTE: Validar que la descripción es correcta antes de seguir -----------------🔥
 
-            try:
+            def _matar_procesos_herramienta(log):
+                """Mata solo Chrome/chromedriver de la herramienta. NO afecta el Chrome personal."""
+                import subprocess
+                subprocess.run(["taskkill", "/F", "/IM", "chromedriver.exe"], capture_output=True)
+                subprocess.run(
+                    ["powershell", "-Command",
+                     "Get-Process chrome -ErrorAction SilentlyContinue | "
+                     "Where-Object { $_.CommandLine -like \'*HVTool*\' } | "
+                     "Stop-Process -Force"],
+                    capture_output=True
+                )
+                log("  🔪 Procesos de la herramienta terminados.")
+
+            def _extraer_y_validar_descripcion(driver_actual):
+                """Extrae y valida la descripción. Retorna (True, desc) o (False, motivo)."""
                 from selenium_handler import extraer_descripcion_vacante
 
+                for f_old in Path(carpetas["intermedios"]).glob("descripcion_*.json"):
+                    try:
+                        f_old.unlink()
+                    except Exception:
+                        pass
+
                 extraer_descripcion_vacante(
-                    driver,
+                    driver_actual,
                     config_filtros["vacante"],
                     config_filtros["url_vacante"],
                     log,
@@ -510,41 +530,96 @@ def correr_proceso(config_filtros, ui):
                     carpeta_destino=carpetas["intermedios"],
                 )
 
-                # 🔥 Buscar archivo generado
                 desc_files = list(Path(carpetas["intermedios"]).glob("descripcion_*.json"))
-
                 if not desc_files:
-                    log("❌ No se generó descripción de la vacante.")
-                    ui.proceso_terminado(False)
-                    return
+                    return False, "no_archivo"
 
-                ruta_desc = desc_files[0]
-
-                with open(ruta_desc, encoding="utf-8") as f:
+                with open(desc_files[0], encoding="utf-8") as f:
                     desc = json.load(f)
 
                 texto = desc.get("descripcion_tareas", "").lower().strip()
-
-                errores = [
+                errores_desc = [
                     "límite permitido",
                     "desactivar una oferta",
                     "computrabajo essential",
                     "no disponible",
+                    "acceso para empresas",
+                    "permanecer conectado",
                 ]
+                if len(texto) < 50 or any(e in texto for e in errores_desc):
+                    return False, "invalida"
 
-                if len(texto) < 50 or any(e in texto for e in errores):
-                    log("❌ La descripción de la vacante no es válida.")
-                    log("   La oferta puede estar cerrada o no accesible.")
+                return True, desc
 
-                    # 🔥 POPUP PARA EL USUARIO
-                    ui.root.after(0, lambda: messagebox.showerror(
-                        "Vacante inválida",
-                        "No se pudo obtener una descripción válida.\n\n"
-                        "Verifique que la oferta esté activa en Computrabajo."
-                    ))
+            try:
+                desc_ok, desc_resultado = _extraer_y_validar_descripcion(driver)
 
-                    ui.proceso_terminado(False)
-                    return
+                if not desc_ok:
+                    log(f"  [WARN] Descripción inválida ({desc_resultado}) — intentando re-login automático...")
+
+                    import time as _time
+
+                    # 1. Logout explícito antes de cerrar el driver
+                    try:
+                        driver.get("https://empresa.co.computrabajo.com/Account/LogOff")
+                        _time.sleep(3)
+                        log("  🚪 Logout realizado en Computrabajo.")
+                    except Exception:
+                        pass
+
+                    # 2. Cerrar driver actual
+                    try:
+                        driver.quit()
+                    except Exception:
+                        pass
+                    driver = None
+
+                    # 3. Matar procesos huérfanos de la herramienta
+                    _matar_procesos_herramienta(log)
+
+                    # 4. Borrar perfil Chrome para forzar login fresco
+                    import shutil as _shutil2
+                    chrome_profile = Path("C:/HVTool/chrome_profile")
+                    if chrome_profile.exists():
+                        try:
+                            _shutil2.rmtree(chrome_profile)
+                            log("  🗑  Perfil de Chrome borrado — forzando login fresco...")
+                        except Exception as e:
+                            log(f"  [WARN] No se pudo borrar perfil Chrome: {e}")
+
+                    # 5. Esperar a que Computrabajo libere la sesión
+                    log("  ⏳ Esperando 30s para que la sesión anterior expire...")
+                    _time.sleep(30)
+
+                    # 6. Nuevo driver + login fresco
+                    driver = crear_driver()
+                    resultado_relogin = login(driver, log)
+
+                    if resultado_relogin not in (True,):
+                        log("❌ Re-login fallido.")
+                        ui.root.after(0, lambda: messagebox.showerror(
+                            "Error de sesión",
+                            "No se pudo re-autenticar en Computrabajo.\n"
+                            "Verifica que las credenciales sean correctas."
+                        ))
+                        ui.proceso_terminado(False)
+                        return
+
+                    # 7. Reintentar con sesión nueva
+                    desc_ok, desc_resultado = _extraer_y_validar_descripcion(driver)
+
+                    if not desc_ok:
+                        log("❌ La descripción de la vacante no es válida tras re-login.")
+                        log("   La oferta puede estar cerrada o no accesible.")
+                        ui.root.after(0, lambda: messagebox.showerror(
+                            "Vacante inválida",
+                            "No se pudo obtener una descripción válida.\n\n"
+                            "Verifique que la oferta esté activa en Computrabajo."
+                        ))
+                        ui.proceso_terminado(False)
+                        return
+
+                log("  ✅ Descripción de vacante válida.")
 
             except Exception as e:
                 log(f"❌ Error extrayendo descripción: {e}")
