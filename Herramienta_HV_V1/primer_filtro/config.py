@@ -20,12 +20,12 @@ load_dotenv(_dotenv)
 # ─────────────────────────────────────────
 
 #prod
-#COMPUTRABAJO_EMAIL    = os.getenv("COMPUTRABAJO_EMAIL")
-#COMPUTRABAJO_PASSWORD = os.getenv("COMPUTRABAJO_PASSWORD")
+COMPUTRABAJO_EMAIL    = os.getenv("COMPUTRABAJO_EMAIL")
+COMPUTRABAJO_PASSWORD = os.getenv("COMPUTRABAJO_PASSWORD")
 
 #dev
-COMPUTRABAJO_EMAIL    = "contador@fertrac.com"
-COMPUTRABAJO_PASSWORD = "Fcb830130469"
+#COMPUTRABAJO_EMAIL    = "contador@fertrac.com"
+#COMPUTRABAJO_PASSWORD = "Fcb830130469"
 
 
 if not COMPUTRABAJO_EMAIL or not COMPUTRABAJO_PASSWORD:

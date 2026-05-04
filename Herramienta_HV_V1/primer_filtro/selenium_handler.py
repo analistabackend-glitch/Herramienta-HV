@@ -96,6 +96,14 @@ def crear_driver(headless: bool = False):
 
 def login(driver, log):
     log("Iniciando sesion en Computrabajo...")
+
+    # 🔥 SIEMPRE hacer logout primero para limpiar sesión del servidor
+    try:
+        driver.get("https://empresa.co.computrabajo.com/Account/LogOff")
+        time.sleep(2)
+    except Exception:
+        pass
+
     driver.get(COMPUTRABAJO_OFFERS_URL)
 
     wait = WebDriverWait(driver, SELENIUM_WAIT_TIMEOUT)
@@ -105,56 +113,108 @@ def login(driver, log):
     except TimeoutException:
         pass
 
-    if "login" in driver.current_url.lower() or "account" in driver.current_url.lower():
-        log("  Login requerido...")
+    # Si después del logout+redirect ya estamos autenticados (perfil guardado válido)
+    if "login" not in driver.current_url.lower() and "account" not in driver.current_url.lower():
+        # Verificar que no sea una página de sesión activa
+        texto = driver.page_source.lower()
+        if not any(x in texto for x in [
+            "existe un usuario utilizando los mismos datos",
+            "no es posible ingresar a esta cuenta",
+            "sales_colombia@computrabajo",
+        ]):
+            log("Sesion activa")
+            return True
+
+    # Necesita login
+    log("  Login requerido...")
+    try:
+        campo_user = wait.until(EC.presence_of_element_located((By.ID, "UserName")))
+        campo_user.clear()
+        campo_user.send_keys(COMPUTRABAJO_EMAIL)
+
+        campo_pass = driver.find_element(By.ID, "fiesta")
+        campo_pass.clear()
+        campo_pass.send_keys(COMPUTRABAJO_PASSWORD)
+
+        # Click login
+        driver.find_element(
+            By.CSS_SELECTOR, "button[type='submit'], input[type='submit']"
+        ).click()
+
+        # Esperar resultado del login
         try:
-            campo_user = wait.until(EC.presence_of_element_located((By.ID, "UserName")))
-            campo_user.clear()
-            campo_user.send_keys(COMPUTRABAJO_EMAIL)
+            wait.until(lambda d: (
+                "login" not in d.current_url.lower()
+                or "existe un usuario utilizando los mismos datos" in d.page_source.lower()
+                or "no es posible ingresar a esta cuenta" in d.page_source.lower()
+                or "inténtelo más tarde" in d.page_source.lower()
+            ))
+        except TimeoutException:
+            log("  [WARN] No se pudo determinar estado del login")
 
-            campo_pass = driver.find_element(By.ID, "fiesta")
-            campo_pass.clear()
-            campo_pass.send_keys(COMPUTRABAJO_PASSWORD)
+        texto = driver.page_source.lower()
 
-            # Click login
-            driver.find_element(
-                By.CSS_SELECTOR, "button[type='submit'], input[type='submit']"
-            ).click()
-
-            # 🔥 ESPERA INTELIGENTE (AQUÍ ESTÁ LA CLAVE)
+        # Detectar sesión activa (no debería pasar ya con el logout previo)
+        if any(x in texto for x in [
+            "existe un usuario utilizando los mismos datos",
+            "no es posible ingresar a esta cuenta",
+            "inténtelo más tarde",
+            "sales_colombia@computrabajo",
+        ]):
+            # Logout + esperar 30s + volver al formulario de login desde cero
+            log("  [WARN] Sesión activa detectada — haciendo logout y esperando 30s...")
             try:
-                wait.until(lambda d: (
-                    "login" not in d.current_url.lower()
-                    or "existe un usuario utilizando los mismos datos" in d.page_source.lower()
-                    or "no es posible ingresar a esta cuenta" in d.page_source.lower()
-                    or "inténtelo más tarde" in d.page_source.lower()   # 🔥 NUEVO
-                ))
+                driver.get("https://empresa.co.computrabajo.com/Account/LogOff")
+                time.sleep(2)
+            except Exception:
+                pass
+            time.sleep(30)
+
+            # Volver al formulario desde cero
+            driver.get(COMPUTRABAJO_OFFERS_URL)
+            try:
+                wait.until(lambda d: d.current_url != "about:blank")
             except TimeoutException:
-                log("  [WARN] No se pudo determinar estado del login")
+                pass
 
-            # 🔍 Leer página DESPUÉS de esperar
+            # Si ya está autenticado tras la espera
+            if "login" not in driver.current_url.lower() and "account" not in driver.current_url.lower():
+                log("Login exitoso (reintento)")
+                return True
+
+            # Rellenar formulario de nuevo
+            try:
+                campo_user2 = wait.until(EC.presence_of_element_located((By.ID, "UserName")))
+                campo_user2.clear()
+                campo_user2.send_keys(COMPUTRABAJO_EMAIL)
+                campo_pass2 = driver.find_element(By.ID, "fiesta")
+                campo_pass2.clear()
+                campo_pass2.send_keys(COMPUTRABAJO_PASSWORD)
+                driver.find_element(
+                    By.CSS_SELECTOR, "button[type='submit'], input[type='submit']"
+                ).click()
+                try:
+                    wait.until(lambda d: "login" not in d.current_url.lower())
+                except TimeoutException:
+                    pass
+            except Exception:
+                pass
+
             texto = driver.page_source.lower()
-
-            # 🔴 DETECTAR SESIÓN ACTIVA
             if any(x in texto for x in [
                 "existe un usuario utilizando los mismos datos",
                 "no es posible ingresar a esta cuenta",
-                "inténtelo más tarde",          # 🔥 NUEVO
-                "sales_colombia@computrabajo",  # 🔥 NUEVO
+                "sales_colombia@computrabajo",
             ]):
                 log("❌ Sesión activa detectada en Computrabajo")
                 return "SESION_ACTIVA"
 
-            # ✅ Login correcto
-            log("Login exitoso")
-            return True
+        log("Login exitoso")
+        return True
 
-        except TimeoutException:
-            log("ERROR: Login fallido")
-            return False
-
-    log("Sesion activa")
-    return True
+    except TimeoutException:
+        log("ERROR: Login fallido")
+        return False
 
 
 def _copiar_cookies(source_driver, dest_driver):
@@ -723,10 +783,23 @@ def descargar_hv(driver, url_hv, nombre, carpeta=None):
 
 def _descargar_hv_via_selenium(driver, url_hv, nombre, destino_dir: Path):
     """
-    Fallback: descarga directamente desde el navegador Selenium cuando
-    requests recibe un paywall. Chrome ya tiene la sesión activa y pasa
-    todos los checks de fingerprinting.
+    Fallback: descarga directamente desde el navegador Selenium.
+    FIX: Cambia dinámicamente la carpeta de descarga de Chrome a destino_dir.
     """
+    destino_dir.mkdir(parents=True, exist_ok=True)
+
+    # Cambiar la carpeta de descarga del driver a destino_dir
+    try:
+        driver.execute_cdp_cmd(
+            "Page.setDownloadBehavior",
+            {
+                "behavior": "allow",
+                "downloadPath": str(destino_dir.absolute()),
+            },
+        )
+    except Exception:
+        pass
+
     antes = set(destino_dir.glob("*"))
 
     try:
@@ -734,13 +807,13 @@ def _descargar_hv_via_selenium(driver, url_hv, nombre, destino_dir: Path):
     except Exception:
         return None
 
-    deadline = time.time() + 20
+    deadline = time.time() + 25
     nuevo = None
     while time.time() < deadline:
         time.sleep(0.5)
         ahora = set(destino_dir.glob("*"))
         recientes = ahora - antes
-        completos = [f for f in recientes if f.suffix != ".crdownload"]
+        completos = [f for f in recientes if f.suffix not in (".crdownload", ".tmp")]
         if completos:
             nuevo = completos[0]
             break
@@ -748,10 +821,13 @@ def _descargar_hv_via_selenium(driver, url_hv, nombre, destino_dir: Path):
     if not nuevo or not nuevo.exists():
         return None
 
+    time.sleep(0.5)
+
     ext_final = nuevo.suffix if nuevo.suffix in (".pdf", ".docx") else ".pdf"
     ruta_final = destino_dir / f"{nombre}{ext_final}"
     try:
-        nuevo.rename(ruta_final)
+        if nuevo != ruta_final:
+            nuevo.rename(ruta_final)
     except Exception:
         ruta_final = nuevo
 

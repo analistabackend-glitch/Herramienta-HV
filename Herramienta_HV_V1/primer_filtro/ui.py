@@ -131,6 +131,7 @@ class AppUI:
         self.root = root
         self.callback_iniciar = callback_iniciar
         self.usar_cache_filtros = False
+        self.suprimir_popup_error = False  # True cuando main.py ya mostró su propio popup
 
         # Variables Tkinter
         self.v_vacante   = tk.StringVar()
@@ -204,6 +205,7 @@ class AppUI:
 
     def _construir_ui(self):
         self.root.title("Filtrador de Hojas de Vida")
+        self.root.protocol("WM_DELETE_WINDOW", lambda: os.kill(os.getpid(), 9))
         self.root.geometry("690x780")
         self.root.resizable(True, True)
         self.root.configure(bg=COLOR_BG)
@@ -609,6 +611,7 @@ class AppUI:
 
         # 🔥 Variables internas
         self.usar_cache_filtros = False
+        self.suprimir_popup_error = False  # True cuando main.py ya mostró su propio popup
 
         # Opcional: cambiar apariencia para feedback visual
         self.btn_habilitar.config(
@@ -822,9 +825,11 @@ class AppUI:
                 "El filtrado finalizó correctamente.\nRevisa la carpeta de resultados.")
         else:
             self.btn_iniciar.config(state="normal", text="▶  Iniciar filtrado de HVs")
-            messagebox.showerror(
-                "Error en el proceso",
-                "El proceso terminó con errores.\nRevisa el archivo log_filtrador.txt.")
+            if not self.suprimir_popup_error:
+                messagebox.showerror(
+                    "Error en el proceso",
+                    "El proceso terminó con errores.\nRevisa el archivo log_filtrador.txt.")
+            self.suprimir_popup_error = False  # reset para la próxima ejecución
 
     # ── Iniciar proceso ────────────────────────────────────────────────────────
 

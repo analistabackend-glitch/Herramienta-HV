@@ -538,16 +538,38 @@ def correr_proceso(config_filtros, ui):
                     desc = json.load(f)
 
                 texto = desc.get("descripcion_tareas", "").lower().strip()
-                errores_desc = [
+                # Límite de ofertas del mes agotado
+                errores_limite = [
                     "límite permitido",
                     "desactivar una oferta",
+                    "asignar créditos",
+                    "número de ofertas de este mes",
+                ]
+                # Oferta cerrada/inválida
+                errores_oferta = [
                     "computrabajo essential",
                     "no disponible",
+                ]
+                # Sesión expirada → re-login puede ayudar
+                errores_sesion = [
                     "acceso para empresas",
                     "permanecer conectado",
                 ]
-                if len(texto) < 50 or any(e in texto for e in errores_desc):
-                    return False, "invalida"
+                # Verificar URL actual
+                url_actual = ""
+                try:
+                    url_actual = driver_actual.current_url.lower()
+                except Exception:
+                    pass
+
+                if any(e in texto for e in errores_limite) or "cantpublish" in url_actual:
+                    return False, "oferta_vencida"
+
+                if any(e in texto for e in errores_oferta):
+                    return False, "oferta_cerrada"
+
+                if any(e in texto for e in errores_sesion) or len(texto) < 50:
+                    return False, "sesion_expirada"
 
                 return True, desc
 
@@ -555,9 +577,38 @@ def correr_proceso(config_filtros, ui):
                 desc_ok, desc_resultado = _extraer_y_validar_descripcion(driver)
 
                 if not desc_ok:
-                    log(f"  [WARN] Descripción inválida ({desc_resultado}) — intentando re-login automático...")
-
                     import time as _time
+
+                    # Oferta vencida
+                    if desc_resultado == "oferta_vencida":
+                        log("❌ La oferta está vencida o no es accesible.")
+                        ui.root.after(0, lambda: messagebox.showerror(
+                            "Oferta vencida",
+                            "⚠️ No se puede procesar esta oferta.\n\n"
+                            "La oferta seleccionada está vencida o fue desactivada.\n\n"
+                            "Por favor selecciona una oferta activa e intenta de nuevo."
+                        ))
+                        ui.suprimir_popup_error = True
+                        ui.proceso_terminado(False)
+                        return
+
+                    # Oferta cerrada: no tiene sentido reintentar
+                    if desc_resultado == "oferta_cerrada":
+                        log("❌ La oferta laboral está cerrada o no es accesible.")
+                        ui.root.after(0, lambda: messagebox.showerror(
+                            "Oferta no disponible",
+                            "⚠️ No se pudo procesar esta oferta.\n\n"
+                            "La oferta puede estar:\n"
+                            "  • Cerrada o vencida\n"
+                            "  • Desactivada en Computrabajo\n\n"
+                            "Verifica el estado de la oferta e intenta con otra."
+                        ))
+                        ui.suprimir_popup_error = True
+                        ui.proceso_terminado(False)
+                        return
+
+                    # Sesión expirada: intentar re-login
+                    log("  [WARN] Sesión expirada — intentando re-login automático...")
 
                     # 1. Logout explícito antes de cerrar el driver
                     try:
@@ -602,6 +653,7 @@ def correr_proceso(config_filtros, ui):
                             "No se pudo re-autenticar en Computrabajo.\n"
                             "Verifica que las credenciales sean correctas."
                         ))
+                        ui.suprimir_popup_error = True
                         ui.proceso_terminado(False)
                         return
 
@@ -609,16 +661,22 @@ def correr_proceso(config_filtros, ui):
                     desc_ok, desc_resultado = _extraer_y_validar_descripcion(driver)
 
                     if not desc_ok:
-                        log("❌ La descripción de la vacante no es válida tras re-login.")
-                        log("   La oferta puede estar cerrada o no accesible.")
-                        ui.root.after(0, lambda: messagebox.showerror(
-                            "Vacante inválida",
-                            "No se pudo obtener una descripción válida.\n\n"
-                            "Verifique que la oferta esté activa en Computrabajo."
-                        ))
+                        if desc_resultado == "oferta_vencida":
+                            msg = ("⚠️ La oferta seleccionada está vencida o fue desactivada.\n\n"
+                                   "Por favor selecciona una oferta activa e intenta de nuevo.")
+                            titulo = "Oferta vencida"
+                        elif desc_resultado == "oferta_cerrada":
+                            msg = ("⚠️ La oferta está cerrada o no es accesible.\n\n"
+                                   "Verifica el estado de la oferta e intenta con otra.")
+                            titulo = "Oferta no disponible"
+                        else:
+                            msg = ("No se pudo obtener la descripción tras re-autenticación.\n\n"
+                                   "Intenta cerrar sesión manualmente en Computrabajo y volver a correr.")
+                            titulo = "Error de sesión"
+                        log(f"❌ {msg.split(chr(10))[0]}")
+                        ui.root.after(0, lambda t=titulo, m=msg: messagebox.showerror(t, m))
                         ui.proceso_terminado(False)
                         return
-
                 log("  ✅ Descripción de vacante válida.")
 
             except Exception as e:
@@ -629,6 +687,8 @@ def correr_proceso(config_filtros, ui):
             # 4b. Extraer URLs de candidatos
             log("\nExtrayendo URLs de candidatos...")
             urls = extraer_urls(driver, config_filtros["url_vacante"], log)
+            #dev
+            # urls = urls[:5]  #prod Para correr en prod, comentar esta línea.
 
             if not urls:
                 log("No se encontraron aspirantes.")
@@ -844,5 +904,5 @@ def iniciar_proceso_thread(config_filtros, ui):
     args=(config_filtros, ui)
     )
 
-    thread.daemon = False
+    thread.daemon = True
     thread.start()

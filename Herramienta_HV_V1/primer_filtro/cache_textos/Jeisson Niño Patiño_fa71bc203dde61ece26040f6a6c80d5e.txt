@@ -1,0 +1,75 @@
+JEISSON FERNEY NIÑO PATIÑO
+Analista de Datos | Business Intelligence & ETL | Power BI · SQL · DAX · Microsoft Fabric
+📧 jefenipa123@gmail.com 📱 314 436 6748 📍 Bogotá, Colombia 🔗 linkedin.com/in/jeissonferney-niño
+PERFIL PROFESIONAL
+Analista de Datos con formación en Ciencias de Datos y experiencia práctica en el ciclo completo del dato: extracción,
+transformación, carga (ETL) y visualización. Especializado en Power BI (Desktop y Service), DAX, SQL y automatización con
+Power Automate y Microsoft Fabric. He diseñado y mantenido dashboards interactivos orientados a la toma de decisiones
+en sectores como insurtech y salud. Actualmente en búsqueda activa de nuevos retos como Analista de Datos donde pueda
+generar valor estratégico mediante analítica avanzada y visualización efectiva.
+HABILIDADES TÉCNICAS
+BI & Visualización Power BI Desktop · Power BI Service · DAX · Power Query · Dashboards interactivos · KPIs
+Bases de datos SQL · PostgreSQL · SQL Server · Microsoft Access · DataGrip · Consultas avanzadas · ODBC
+ETL & Datos Procesos ETL · Modelado de datos · Limpieza y transformación · Análisis exploratorio (EDA)
+Automatización Power Automate · Microsoft Fabric (Flujos Gen2) · Scripts .bat · Comandos Linux
+Herramientas Excel avanzado (Power Query · Tablas dinámicas · Cruces de bases) · Microsoft 365
+Gobierno de datos Gestión de workspaces Power BI Service · Control de accesos · Publicación de reportes
+Otras IA aplicada a datos · Ciberseguridad básica · Omega ERP · Kofax · Información confidencial
+EXPERIENCIA LABORAL
+Analista de Reportería
+Quan SAS · Insurtech Jun. 2025 – Feb 2026 · Bogotá, Colombia
+▸ Mantuve y actualicé 5 dashboards activos en Power BI Service con disponibilidad del 99% durante un proceso crítico de
+migración de base de datos, asegurando continuidad operativa sin interrupciones.
+▸ Automaticé el envío de reportes periódicos a +5 equipos internos, logrando una reducción de 4 horas semanales de
+trabajo manual y liberando capacidad para tareas de mayor valor analítico.
+▸ Automaticé la distribución de reportes para +2 aliados estratégicos mediante Power Automate, optimizando el
+consumo de recursos desde el back-end y mejorando tiempos de respuesta.
+▸ Reduje en un 80% el tiempo de orquestación de datos mediante flujos colaborativos Gen2 en Microsoft Fabric,
+optimizando la gestión y disponibilidad de datos en entornos cloud.
+▸ Desarrollé procesos ETL con extracción desde PostgreSQL vía DataGrip, transformación y carga hacia modelos
+analíticos escalables para reportería ejecutiva y operativa.
+▸ Implementé conexiones directas vía ODBC y alimenté datasets desde Excel en la nube a través de flujos en Power BI
+Service, manteniendo modelos actualizados y escalables.
+▸ Administré workspaces en Power BI Service: control de accesos, roles y publicación de reportes para múltiples áreas de
+negocio.
+Stack: Power BI · Power BI Service · DAX · PostgreSQL · DataGrip · ETL · Power Automate · Microsoft Fabric · ODBC · SQL · Excel
+Auxiliar Administrativo & Analista de Cuentas Médicas
+Éticos Serrano Gómez LTDA · Sector Salud Sept. 2023 – May. 2025 · Bogotá, Colombia
+▸ Desarrollé dashboards interactivos en Power BI con modelado de datos, transformación vía Power Query y tableros de
+control operativos y ejecutivos orientados a la toma de decisiones.
+▸ Ejecuté procesos ETL completos: extracción desde bases de datos SQL y Access, limpieza, transformación y verificación
+de calidad del dato, y carga hacia modelos analíticos para reportería interna.
+▸ Automaticé el movimiento y copia masiva de imágenes y soportes en formato PDF mediante comandos Linux y
+ejecutables .bat, eliminando tareas manuales repetitivas en el proceso de radicación de cuentas médicas.
+▸ Automaticé el listado de directorios y carpetas en archivos estructurados CSV mediante ejecutables .bat, facilitando el
+inventario, trazabilidad y auditoría de soportes documentales.
+▸ Construí consolidados de datos y unión de consultas SQL para la generación de planos en el proceso de radicación y
+facturación de cuentas médicas, asegurando integridad y cumplimiento normativo.
+▸ Actualicé estados y respuestas de cuentas mediante cruces de bases de datos en Excel, garantizando trazabilidad y
+disponibilidad de la información para equipos operativos.
+Stack: Power BI · Power Query · SQL · Microsoft Access · ETL · Excel avanzado · Linux · Scripts .bat · Data Modeling
+Auxiliar Administrativo
+Servicio Eurocar · Sector Automotriz Oct. 2021 – Dic. 2022 · Bogotá, Colombia
+▸ Gestión y estructuración de bases de datos de clientes, distribuidores y competencia en Excel para estudios de
+mercadeo y segmentación comercial.
+▸ Facturación y gestión de órdenes de patio en aplicativo Omega ERP, asegurando precisión en registros operativos y
+logísticos.
+FORMACIÓN ACADÉMICA
+Profesional en Ciencias de Datos 2022 – 2026 · En curso
+Fundación Universitaria Compensar
+Técnico en Recursos Humanos 2019 – 2020 · Culminado
+SENA
+CERTIFICACIONES & FORMACIÓN COMPLEMENTARIA
+▸ Certificación en Ciberseguridad · Google · Coursera (Sep. 2024)
+▸ Herramientas del oficio: Linux y SQL · Google · Coursera (Agos. 2024)
+▸ Integración de IA en el trabajo · Google · Coursera
+▸ Limpieza, Transformación y Carga de Datos en Power BI · Microsoft Learn
+▸ Microsoft Power BI Desktop · Coursera · Udemy (Oct. 2024)
+▸ Power Query – Transformación de Datos en Power BI · Coursera · Udemy (Oct. 2024)
+▸ Fundamentos de IA · IBM
+▸ Introducción a ciencias de datos · Cisco Networking Academy
+▸ Certificación Excel · Colsubsidio · CETCOLSUBSIDIO · bajo el código SECMPC-AAA-338470
+▸ Trabajar en un Mundo Digital – Habilidades Profesionales · IBM
+PORTAFOLIO
+Portafolio de Proyectos BI (Power BI Service): https://bit.ly/Jeisson_Nino
++20 dashboards interactivos en sectores: Insurtech · Salud · Retail · Finanzas · RRHH · Logística · Aviación
